@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
+use App\Livewire\DeleteButton;
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,5 +19,6 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
+Route::get('/delete-test', DeleteButton::class);
 
 require __DIR__.'/auth.php';
