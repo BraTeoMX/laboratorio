@@ -6,8 +6,7 @@ use App\Models\User;
 use App\Models\CatalogoRol;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\On; 
-
+use Livewire\Attributes\On; // Asegúrate de que esta línea esté presente
 
 new class extends Component {
     use WithPagination;
@@ -16,7 +15,7 @@ new class extends Component {
     public bool $generateEmail = false;
     public string $search = '';
     public ?int $userIdBeingEdited = null;
-     public bool $showPassword = false;
+    public bool $showPassword = false;
     public $name = '';
     public $employee_number = '';
     public $email = '';
@@ -129,8 +128,6 @@ new class extends Component {
 
         // Manejo del email
         if ($this->generateEmail) {
-            // Si estamos creando Y el checkbox está marcado, el email se generará después.
-            // Si estamos editando Y el checkbox está marcado, el email se regenerará.
             // No hacemos nada con $userData['email'] aquí si se va a autogenerar.
         } else {
             $userData['email'] = $validatedData['email'];
@@ -154,8 +151,8 @@ new class extends Component {
             $alertMessage = 'Usuario actualizado correctamente.';
 
         } else {
-            // --- LÓGICA DE CREACIÓN (como estaba antes) ---
-            $user = User::create($userData); // Email podría no estar aquí si es autogenerado
+            // --- LÓGICA DE CREACIÓN ---
+            $user = User::create($userData);
 
             if ($this->generateEmail) {
                 $user->email = 'lab' . $user->id . '@lab.com';
@@ -166,9 +163,9 @@ new class extends Component {
         
         $this->closeModal();
 
-        $this->dispatch('toast', [
-            'text' => $alertMessage,
-            'type' => 'success'
+        $this->dispatch('swal:toast', [
+            'icon' => 'success',
+            'title' => $alertMessage
         ]);
     }
 
@@ -181,21 +178,22 @@ new class extends Component {
             'confirmButtonText' => 'Sí, cambiar',
             'denyButtonText' => 'No, cancelar',
             'method' => 'toggleStatusConfirmed',
-            'params' => ['userId' => $user->id] // ¡Importante! Enviamos los parámetros aquí
+            'params' => ['userId' => $user->id]
         ]);
     }
 
     #[On('toggleStatusConfirmed')]
-    public function toggleStatusConfirmed($event)
+    public function toggleStatusConfirmed(int $userId)
     {
-        $user = User::find($event['userId']);
+        $user = User::find($userId);
         if ($user) {
             $user->status = !$user->status;
             $user->save();
 
-            $this->dispatch('toast', [
-                'text' => 'El estado del usuario ha sido actualizado.',
-                'type' => 'success'
+            // Corregido con un solo $
+            $this->dispatch('swal:toast', [
+                'icon' => 'success',
+                'title' => 'El estado del usuario ha sido actualizado.'
             ]);
         }
     }
