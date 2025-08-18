@@ -22,6 +22,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'employee_number',
+        'status',
+        'role_id',
+        'password',
     ];
 
     /**
@@ -54,8 +58,15 @@ class User extends Authenticatable
     {
         return Str::of($this->name)
             ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
+    }
+
+    public function role()
+    {
+        // El primer parámetro es el modelo relacionado.
+        // El segundo es la clave foránea en la tabla `users` (role_id).
+        // El tercero es la clave primaria en la tabla `catalogo_roles` (id).
+        return $this->belongsTo(CatalogoRol::class, 'role_id', 'id');
     }
 }
