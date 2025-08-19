@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        
+        // 👇 Aquí es donde registras tu alias
+        $middleware->alias([
+            'role.redirect' => \App\Http\Middleware\RedirectBasedOnRole::class,
+        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
