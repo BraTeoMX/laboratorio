@@ -4,10 +4,20 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Auth;
 
-// Ruta de bienvenida para visitantes (no autenticados)
+// Ruta raíz inteligente que redirige según el estado de autenticación.
 Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+    // Si el usuario ya está autenticado...
+    if (Auth::check()) {
+        // ...lo enviamos al 'dashboard' principal. Tu middleware 'role.redirect'
+        // se encargará de llevarlo al dashboard correcto (dashboard o dashboard2).
+        return redirect()->route('dashboard');
+    }
+
+    // Si el usuario NO está autenticado (es un visitante)...
+    // ...lo enviamos a la página de inicio de sesión.
+    return redirect()->route('login');
+})->name('home'); // Mantenemos el nombre 'home' por si se usa en otro lugar.
+
 
 // Grupo principal para TODAS las rutas que requieren autenticación y email verificado
 Route::middleware(['auth', 'verified'])->group(function () {
