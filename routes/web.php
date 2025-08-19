@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Volt::route('users', 'users.index')->name('users.index');
+    Volt::route('calidad/inspeccion-tela', 'calidad.reporte-inspeccion')->name('calidad.inspeccion');
     
 });
 

@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Blade::anonymousComponentPath(
+            base_path('vendor/livewire/flux/src/resources/views/components'), 'flux'
+        );
     }
 }

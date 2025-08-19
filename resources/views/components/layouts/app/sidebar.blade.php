@@ -28,6 +28,14 @@
                 </flux:navlist.item>
             </flux:navlist.group>
         </flux:navlist>
+        <flux:navlist.group heading="{{ __('Registros') }}" expandable :expanded="request()->routeIs('calidad.*')">
+            <flux:navlist.item icon="clipboard-document-list" :href="route('calidad.inspeccion')"
+                :current="request()->routeIs('calidad.inspeccion')" wire:navigate>
+                {{ __('Inspección de Tela') }}
+            </flux:navlist.item>
+
+            {{-- Aquí podrías añadir enlaces a otros formularios en el futuro --}}
+        </flux:navlist.group>
 
         <flux:spacer />
 
