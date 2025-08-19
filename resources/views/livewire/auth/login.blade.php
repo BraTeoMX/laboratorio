@@ -1,5 +1,7 @@
 <?php
 
+// Importaciones necesarias para el componente
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,44 +13,88 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
+// Definición del componente Volt con el layout de autenticación
 new #[Layout('components.layouts.auth')] class extends Component {
-    #[Validate('required|string|email')]
-    public string $email = '';
+    // Propiedad para almacenar la credencial (email o número de empleado)
+    #[Validate('required|string')]
+    public string $credential = '';
 
+    // Propiedad para la contraseña
     #[Validate('required|string')]
     public string $password = '';
 
+    // Propiedad para la opción "Recordarme"
     public bool $remember = false;
 
     /**
-     * Handle an incoming authentication request.
+     * Maneja la solicitud de autenticación.
      */
     public function login(): void
     {
+        // Valida los datos del formulario
         $this->validate();
 
+        // Asegura que no se excedan los intentos de inicio de sesión
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // Determina si la credencial es un email o un número de empleado
+        $fieldType = filter_var($this->credential, FILTER_VALIDATE_EMAIL) ? 'email' : 'employee_number';
+
+        // Busca al usuario por la credencial para verificar su estado antes de autenticar
+        $user = User::where($fieldType, $this->credential)->first();
+
+        // Si el usuario existe pero está inactivo (status = 0)
+        if ($user && $user->status == 0) {
+            // Registra el intento fallido en el RateLimiter
             RateLimiter::hit($this->throttleKey());
 
+            // Despacha un evento para ser capturado por SweetAlert en el frontend
+            $this->dispatch('swal:toast', [
+                'icon' => 'info',
+                'title' => 'Su usuario está dado de baja. Contacte al administrador.',
+                'timer' => 5000
+            ]);
+
+            return; // Detiene la ejecución del método
+        }
+
+        // Intenta autenticar al usuario con la credencial y contraseña
+        if (!Auth::attempt([$fieldType => $this->credential, 'password' => $this->password], $this->remember)) {
+            // Si la autenticación falla, registra el intento
+            RateLimiter::hit($this->throttleKey());
+
+            // Lanza una excepción de validación con el mensaje de error estándar
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'credential' => __('auth.failed'),
             ]);
         }
 
+        // Si la autenticación es exitosa, limpia los intentos del RateLimiter
         RateLimiter::clear($this->throttleKey());
+
+        // Regenera la sesión para prevenir ataques de fijación de sesión
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        // Obtiene el usuario autenticado para la redirección por rol
+        $authenticatedUser = Auth::user();
+
+        // Determina la ruta de destino según el rol del usuario
+        $routeName = match ((int) $authenticatedUser->role_id) {
+            1, 2, 3, 4 => 'dashboard',
+            5           => 'vistaAuditor',
+            default     => 'dashboard', // Ruta por defecto como respaldo
+        };
+
+        // Redirige al usuario a la vista correspondiente
+        $this->redirect(route($routeName), navigate: true);
     }
 
     /**
-     * Ensure the authentication request is not rate limited.
+     * Asegura que la solicitud no esté limitada por intentos fallidos.
      */
     protected function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 
@@ -57,7 +103,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => __('auth.throttle', [
+            'credential' => __('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -65,50 +111,35 @@ new #[Layout('components.layouts.auth')] class extends Component {
     }
 
     /**
-     * Get the authentication rate limiting throttle key.
+     * Obtiene la clave para el limitador de intentos (Rate Limiter).
      */
     protected function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+        return Str::transliterate(Str::lower($this->credential) . '|' . request()->ip());
     }
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Log in to your account')"
-        :description="__('Enter your email and password below to log in')" />
+    <x-auth-header :title="__('Accede con tu cuenta')"
+        :description="__('Ingresa tu número de empleado o correo asociado')" />
 
-    <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
 
-    <form method="POST" wire:submit="login" class="flex flex-col gap-6">
-        <!-- Email Address -->
-        <flux:input wire:model="email" :label="__('Email address')" type="email" required autofocus autocomplete="email"
-            placeholder="email@example.com" />
+    <form wire:submit="login" class="flex flex-col gap-6">
 
-        <!-- Password -->
+        <flux:input wire:model="credential" :label="__('Número de empleado o correo electrónico')" type="text" required
+            autofocus autocomplete="username" placeholder="empleado@empresa.com o 18080" />
+
         <div class="relative">
-            <flux:input wire:model="password" :label="__('Password')" type="password" required
-                autocomplete="current-password" :placeholder="__('Password')" viewable />
-
-            @if (Route::has('password.request'))
-            <flux:link class="absolute end-0 top-0 text-sm" :href="route('password.request')" wire:navigate>
-                {{ __('Forgot your password?') }}
-            </flux:link>
-            @endif
+            <flux:input wire:model="password" :label="__('Contraseña')" type="password" required
+                autocomplete="current-password" :placeholder="__('Contraseña')" viewable />
         </div>
-
-        <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" :label="__('Remember me')" />
 
         <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
+            <flux:button variant="primary" type="submit" class="w-full">
+                {{ __('Iniciar sesión') }}
+            </flux:button>
         </div>
-    </form>
 
-    @if (Route::has('register'))
-    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-        <span>{{ __('Don\'t have an account?') }}</span>
-        <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
-    </div>
-    @endif
+    </form>
 </div>
