@@ -169,7 +169,7 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="articulo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Artículo</label>
-                                        <select id="articulo" wire:model.blur="articulo"
+                                        <select id="articulo" wire:model.live.debounce.300ms="articulo"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                             <option value="">Seleccione...</option>
                                             @foreach($articulos as $item)
@@ -183,7 +183,7 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="proveedor"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Proveedor</label>
-                                        <select id="proveedor" wire:model.blur="proveedor"
+                                        <select id="proveedor" wire:model.live.debounce.300ms="proveedor"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                             <option value="">Seleccione...</option>
                                             @foreach($proveedores as $prov)
@@ -198,7 +198,8 @@ $save = function () {
                                         <label for="color_nombre"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre
                                             Color</label>
-                                        <input type="text" wire:model.blur="color_nombre" id="color_nombre"
+                                        <input type="text" wire:model.live.debounce.300ms="color_nombre"
+                                            id="color_nombre"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('color_nombre') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -209,8 +210,8 @@ $save = function () {
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Yd)</label>
-                                        <input type="number" step="0.01" wire:model.blur="ancho_contratado"
-                                            id="ancho_contratado"
+                                        <input type="number" step="0.01"
+                                            wire:model.live.debounce.300ms="ancho_contratado" id="ancho_contratado"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
@@ -218,7 +219,7 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="material"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Material</label>
-                                        <select id="material" wire:model.blur="material"
+                                        <select id="material" wire:model.live.debounce.300ms="material"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                             <option value="">Seleccione...</option>
                                             @foreach($materiales as $mat)
@@ -232,7 +233,8 @@ $save = function () {
                                         <label for="orden_compra"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Orden
                                             Compra</label>
-                                        <input type="text" wire:model.blur="orden_compra" id="orden_compra"
+                                        <input type="text" wire:model.live.debounce.300ms="orden_compra"
+                                            id="orden_compra"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('orden_compra') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -241,7 +243,8 @@ $save = function () {
                                         <label for="numero_recepcion"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">No.
                                             Recepción</label>
-                                        <input type="text" wire:model.blur="numero_recepcion" id="numero_recepcion"
+                                        <input type="text" wire:model.live.debounce.300ms="numero_recepcion"
+                                            id="numero_recepcion"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
@@ -259,7 +262,7 @@ $save = function () {
                                         <label for="rollo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">#
                                             Rollo</label>
-                                        <input type="text" wire:model.blur="rollo" id="rollo"
+                                        <input type="text" wire:model.live.debounce.300ms="rollo" id="rollo"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('rollo') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -268,7 +271,7 @@ $save = function () {
                                         <label for="web_no"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Web
                                             No.</label>
-                                        <input type="text" wire:model.blur="web_no" id="web_no"
+                                        <input type="text" wire:model.live.debounce.300ms="web_no" id="web_no"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('web_no') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -277,7 +280,8 @@ $save = function () {
                                         <label for="numero_piezas"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">#
                                             Piezas</label>
-                                        <input type="number" wire:model.blur="numero_piezas" id="numero_piezas"
+                                        <input type="number" wire:model.live.debounce.300ms="numero_piezas"
+                                            id="numero_piezas"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('numero_piezas') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -286,7 +290,7 @@ $save = function () {
                                         <label for="numero_lote"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lote
                                             Teñido</label>
-                                        <input type="text" wire:model.blur="numero_lote" id="numero_lote"
+                                        <input type="text" wire:model.live.debounce.300ms="numero_lote" id="numero_lote"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('numero_lote') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -297,7 +301,7 @@ $save = function () {
                                         <label for="yarda_ticket"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yarda
                                             Ticket</label>
-                                        <input type="number" step="0.01" wire:model.blur="yarda_ticket"
+                                        <input type="number" step="0.01" wire:model.live.debounce.300ms="yarda_ticket"
                                             id="yarda_ticket"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('yarda_ticket') <span class="text-red-500 text-xs">{{ $message }}</span>
@@ -307,7 +311,7 @@ $save = function () {
                                         <label for="yarda_actual"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yarda
                                             Actual</label>
-                                        <input type="number" step="0.01" wire:model.blur="yarda_actual"
+                                        <input type="number" step="0.01" wire:model.live.debounce.300ms="yarda_actual"
                                             id="yarda_actual"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('yarda_actual') <span class="text-red-500 text-xs">{{ $message }}</span>
@@ -317,7 +321,7 @@ $save = function () {
                                         <label for="ancho_cortable"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Cortable</label>
-                                        <input type="number" step="0.01" wire:model.blur="ancho_cortable"
+                                        <input type="number" step="0.01" wire:model.live.debounce.300ms="ancho_cortable"
                                             id="ancho_cortable"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('ancho_cortable') <span class="text-red-500 text-xs">{{ $message
@@ -332,28 +336,32 @@ $save = function () {
                                         <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
                                                 <label for="puntos_1" class="text-xs text-gray-500">1 Punto</label>
-                                                <input type="number" wire:model.blur="puntos_1" id="puntos_1"
+                                                <input type="number" wire:model.live.debounce.300ms="puntos_1"
+                                                    id="puntos_1"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 @error('puntos_1') <span class="text-red-500 text-xs">{{ $message
                                                     }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_2" class="text-xs text-gray-500">2 Puntos</label>
-                                                <input type="number" wire:model.blur="puntos_2" id="puntos_2"
+                                                <input type="number" wire:model.live.debounce.300ms="puntos_2"
+                                                    id="puntos_2"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 @error('puntos_2') <span class="text-red-500 text-xs">{{ $message
                                                     }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_3" class="text-xs text-gray-500">3 Puntos</label>
-                                                <input type="number" wire:model.blur="puntos_3" id="puntos_3"
+                                                <input type="number" wire:model.live.debounce.300ms="puntos_3"
+                                                    id="puntos_3"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 @error('puntos_3') <span class="text-red-500 text-xs">{{ $message
                                                     }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_4" class="text-xs text-gray-500">4 Puntos</label>
-                                                <input type="number" wire:model.blur="puntos_4" id="puntos_4"
+                                                <input type="number" wire:model.live.debounce.300ms="puntos_4"
+                                                    id="puntos_4"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 @error('puntos_4') <span class="text-red-500 text-xs">{{ $message
                                                     }}</span> @enderror
@@ -365,7 +373,8 @@ $save = function () {
                                     <div class="sm:col-span-6">
                                         <label for="observaciones"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones</label>
-                                        <textarea wire:model.blur="observaciones" id="observaciones" rows="3"
+                                        <textarea wire:model.live.debounce.300ms="observaciones" id="observaciones"
+                                            rows="3"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
                                         @error('observaciones') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
