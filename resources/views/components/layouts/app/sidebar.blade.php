@@ -19,20 +19,17 @@
                     wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
             </flux:navlist.group>
         </flux:navlist>
+        <flux:navlist variant="outline">
+            <flux:navlist.group heading="{{ __('Administrador') }}" expandable
+                :expanded="request()->routeIs('customers.index') || request()->routeIs('users.*')">
+                <flux:navlist.item icon="user-group" :href="route('users.index')"
+                    :current="request()->routeIs('users.*')" wire:navigate>
+                    {{ __('Adm. Usuarios') }}
+                </flux:navlist.item>
+            </flux:navlist.group>
+        </flux:navlist>
 
         <flux:spacer />
-
-        <flux:navlist variant="outline">
-            <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit"
-                target="_blank">
-                {{ __('Repository') }}
-            </flux:navlist.item>
-
-            <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire"
-                target="_blank">
-                {{ __('Documentation') }}
-            </flux:navlist.item>
-        </flux:navlist>
 
         <!-- Desktop User Menu -->
         <flux:dropdown class="hidden lg:block" position="bottom" align="start">
@@ -56,13 +53,6 @@
                             </div>
                         </div>
                     </div>
-                </flux:menu.radio.group>
-
-                <flux:menu.separator />
-
-                <flux:menu.radio.group>
-                    <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}
-                    </flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />
@@ -103,13 +93,6 @@
                             </div>
                         </div>
                     </div>
-                </flux:menu.radio.group>
-
-                <flux:menu.separator />
-
-                <flux:menu.radio.group>
-                    <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}
-                    </flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />
