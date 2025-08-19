@@ -14,7 +14,7 @@
         </a>
 
         <flux:navlist variant="outline">
-            <flux:navlist.group :heading="__('Platform')" class="grid">
+            <flux:navlist.group :heading="__('Menu')" class="grid">
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
             </flux:navlist.group>
@@ -37,30 +37,50 @@
                 icon:trailing="chevrons-up-down" />
 
             <flux:menu class="w-[220px]">
-                <flux:menu.radio.group>
-                    <div class="p-0 text-sm font-normal">
-                        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                            <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                <span
-                                    class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                    {{ auth()->user()->initials() }}
-                                </span>
+                {{-- User Info Header --}}
+                <div class="px-1 py-1.5">
+                    <div class="flex items-center gap-2 text-start text-sm">
+                        <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
+                            <span
+                                class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                {{ auth()->user()->initials() }}
                             </span>
-
-                            <div class="grid flex-1 text-start text-sm leading-tight">
-                                <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                <span class="truncate text-xs">{{ auth()->user()->email }}</span>
-                            </div>
+                        </span>
+                        <div class="grid flex-1 text-start text-sm leading-tight">
+                            <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
+                            <span class="truncate text-xs">{{ auth()->user()->email }}</span>
                         </div>
                     </div>
-                </flux:menu.radio.group>
+                </div>
 
                 <flux:menu.separator />
 
+                <div class="px-2 py-4">
+                    <flux:radio.group x-data variant="segmented" x-model="$flux.appearance"
+                        class="flex flex-col gap-2 w-full mb-4 items-start">
+                        <flux:radio class="self-start w-full justify-start text-left" value="light" icon="sun">
+                            {{ __('Light') }}
+                        </flux:radio>
+
+                        <flux:radio class="self-start w-full justify-start text-left" value="dark" icon="moon">
+                            {{ __('Dark') }}
+                        </flux:radio>
+
+                        <flux:radio class="self-start w-full justify-start text-left" value="system"
+                            icon="computer-desktop">
+                            {{ __('Sistema') }}
+                        </flux:radio>
+                    </flux:radio.group>
+                </div>
+
+                <flux:menu.separator />
+                <flux:menu.separator />
+
+                {{-- Logout Form --}}
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
                     <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                        {{ __('Log Out') }}
+                        {{ __('Cerrar Sesion') }}
                     </flux:menu.item>
                 </form>
             </flux:menu>
