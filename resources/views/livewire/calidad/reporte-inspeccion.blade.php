@@ -418,22 +418,40 @@ $save = function () {
                                             <tr>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Proveedor</th>
+                                                    WEB No.</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Artículo</th>
+                                                    Numero piezas</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    # Rollo</th>
+                                                    Numero Lote teñido</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    Yardage Ticket</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    Ancho cortable</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    1 punto</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    2 puntos</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    3 puntos</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    4 puntos</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Total Puntos</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Inspector</th>
+                                                    Rollo</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Fecha</th>
+                                                    Observaciones</th>
                                             </tr>
                                         </thead>
                                         <tbody
@@ -444,17 +462,43 @@ $save = function () {
                                             @php $detalle = $registro->detalles->first(); @endphp
                                             <tr wire:key="{{ $registro->id }}">
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">{{
-                                                    $registro->proveedor }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $registro->articulo
+                                                    $detalle?->web_no }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->numero_piezas
                                                     }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $detalle?->rollo ??
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->numero_lote ??
                                                     'N/A' }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold">{{
-                                                    $detalle?->total_puntos ?? 'N/A' }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{
-                                                    $registro->auditor->name }}</td>
+                                                    $detalle?->yarda_ticket ??
+                                                    'N/A' }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{
-                                                    $registro->created_at->format('d/m/Y') }}</td>
+                                                    $detalle?->yarda_actual ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->ancho_cortable ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->puntos_1 ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->puntos_2 ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->puntos_3 ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->puntos_4 ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->total_puntos ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->rollo ??
+                                                    'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->observaciones ??
+                                                    'N/A' }}</td>
                                             </tr>
                                             @empty
                                             <tr>
