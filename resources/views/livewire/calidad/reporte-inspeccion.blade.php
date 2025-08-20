@@ -1,10 +1,30 @@
 <?php
 
-use function Livewire\Volt\{state, rules, with, on};
+use function Livewire\Volt\{state, rules, with, on,  mount};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
+
+// 🔥 NUEVA LÓGICA: Se ejecuta al cargar el componente
+mount(function () {
+    // Buscar el último reporte creado HOY por el USUARIO ACTUAL
+    $ultimoReporte = InspeccionReporte::where('user_id', Auth::id())
+        ->whereDate('created_at', today())
+        ->latest() // Ordena por fecha de creación descendente
+        ->first(); // Obtiene solo el más reciente
+
+    // Si encontramos un reporte, pre-cargamos el formulario del encabezado
+    if ($ultimoReporte) {
+        $this->proveedor        = $ultimoReporte->proveedor;
+        $this->articulo         = $ultimoReporte->articulo;
+        $this->color_nombre     = $ultimoReporte->color_nombre;
+        $this->ancho_contratado = $ultimoReporte->ancho_contratado;
+        $this->material         = $ultimoReporte->material;
+        $this->orden_compra     = $ultimoReporte->orden_compra;
+        $this->numero_recepcion = $ultimoReporte->numero_recepcion;
+    }
+});
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
 state([
@@ -75,7 +95,7 @@ rules([
 // Función para limpiar el formulario
 $resetForm = function() {
     $this->reset(
-        'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
+        //'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
         'web_no', 'numero_piezas', 'numero_lote', 'yarda_ticket', 'yarda_actual', 'ancho_cortable',
         'puntos_1', 'puntos_2', 'puntos_3', 'puntos_4', 'rollo', 'observaciones'
     );
@@ -161,7 +181,7 @@ $save = function () {
                             {{-- SECCIÓN 1: Encabezado del Reporte --}}
                             <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">1. Encabezado
-                                    del Reporte</h3>
+                                </h3>
                                 <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
 
                                     {{-- Artículo, Proveedor, Color --}}
@@ -254,7 +274,7 @@ $save = function () {
                             {{-- SECCIÓN 2: Detalles de la Inspección (Layout Mejorado) --}}
                             <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    2. Detalle de Inspección de Rollo
+                                    2. Detalle de Inspección
                                 </h3>
 
                                 {{-- Usaremos un grid de 6 columnas en pantallas > sm --}}
