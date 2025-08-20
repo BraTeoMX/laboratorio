@@ -6,7 +6,8 @@
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <flux:sidebar sticky stashable
+        class="border-e border-slate-200 bg-slate-300 dark:border-slate-800 dark:bg-slate-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
         <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
@@ -15,24 +16,24 @@
 
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
-                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
-                    wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                <x-nav-link :href="route('dashboard')" icon="home" :active="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </x-nav-link>
             </flux:navlist.group>
         </flux:navlist>
         <flux:navlist variant="outline">
             <flux:navlist.group heading="{{ __('Administrador') }}" expandable
                 :expanded="request()->routeIs('customers.index') || request()->routeIs('users.*')">
-                <flux:navlist.item icon="user-group" :href="route('users.index')"
-                    :current="request()->routeIs('users.*')" wire:navigate>
+                <x-nav-link :href="route('users.index')" icon="user-group" :active="request()->routeIs('users.*')">
                     {{ __('Adm. Usuarios') }}
-                </flux:navlist.item>
+                </x-nav-link>
             </flux:navlist.group>
         </flux:navlist>
         <flux:navlist.group heading="{{ __('Registros') }}" expandable :expanded="request()->routeIs('calidad.*')">
-            <flux:navlist.item icon="clipboard-document-list" :href="route('calidad.inspeccion')"
-                :current="request()->routeIs('calidad.inspeccion')" wire:navigate>
+            <x-nav-link :href="route('calidad.inspeccion')" icon="clipboard-document-list"
+                :active="request()->routeIs('calidad.inspeccion')">
                 {{ __('Inspección de Tela') }}
-            </flux:navlist.item>
+            </x-nav-link>
 
             {{-- Aquí podrías añadir enlaces a otros formularios en el futuro --}}
         </flux:navlist.group>
