@@ -16,7 +16,7 @@
 
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
-                <x-nav-link :href="route('dashboard')" icon="home" :active="request()->routeIs('dashboard')">
+                <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-nav-link>
             </flux:navlist.group>
