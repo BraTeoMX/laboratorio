@@ -41,8 +41,9 @@ state('materiales', fn() => ['100% Algodón', '98% Algodón / 2% Spandex', '100%
 // 4. Cargar los registros existentes para la tabla
 with(fn () => [
     'registros' => InspeccionReporte::with('auditor', 'detalles')
-        ->latest()
-        ->paginate(5)
+        ->whereDate('created_at', today()) // <-- 1. Filtra por el día actual
+        ->oldest()                         // <-- 2. Ordena del más antiguo al más nuevo
+        ->get()                            // <-- 3. Obtiene todos los registros sin paginar
 ]);
 
 // 5. Reglas de validación basadas en tu esquema SQL
@@ -250,21 +251,16 @@ $save = function () {
                                 </div>
                             </div>
 
-                            {{-- SECCIÓN 2: Detalles de la Inspección --}}
+                            {{-- SECCIÓN 2: Detalles de la Inspección (Layout Mejorado) --}}
                             <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">2. Detalle de
-                                    Inspección de Rollo</h3>
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    2. Detalle de Inspección de Rollo
+                                </h3>
+
+                                {{-- Usaremos un grid de 6 columnas en pantallas > sm --}}
                                 <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                                    {{-- Fila 1 --}}
-                                    <div class="sm:col-span-2">
-                                        <label for="rollo"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">#
-                                            Rollo</label>
-                                        <input type="text" wire:model.live.debounce.300ms="rollo" id="rollo"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        @error('rollo') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
-                                    </div>
+
+                                    {{-- Fila 1: Identificadores (3 columnas de igual tamaño) --}}
                                     <div class="sm:col-span-2">
                                         <label for="web_no"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Web
@@ -274,7 +270,8 @@ $save = function () {
                                         @error('web_no') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
-                                    <div class="sm:col-span-1">
+
+                                    <div class="sm:col-span-2">
                                         <label for="numero_piezas"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">#
                                             Piezas</label>
@@ -284,7 +281,8 @@ $save = function () {
                                         @error('numero_piezas') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
-                                    <div class="sm:col-span-1">
+
+                                    <div class="sm:col-span-2">
                                         <label for="numero_lote"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lote
                                             Teñido</label>
@@ -294,7 +292,7 @@ $save = function () {
                                         @enderror
                                     </div>
 
-                                    {{-- Fila 2 --}}
+                                    {{-- Fila 2: Medidas (3 columnas de igual tamaño) --}}
                                     <div class="sm:col-span-2">
                                         <label for="yarda_ticket"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yarda
@@ -305,6 +303,7 @@ $save = function () {
                                         @error('yarda_ticket') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
+
                                     <div class="sm:col-span-2">
                                         <label for="yarda_actual"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yarda
@@ -315,6 +314,7 @@ $save = function () {
                                         @error('yarda_actual') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
+
                                     <div class="sm:col-span-2">
                                         <label for="ancho_cortable"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
@@ -326,12 +326,13 @@ $save = function () {
                                             }}</span> @enderror
                                     </div>
 
-                                    {{-- Puntos --}}
+                                    {{-- Fila 3: Puntos (Ocupa toda la fila, sin cambios) --}}
                                     <div class="sm:col-span-6">
                                         <label
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos
                                             por Puntos</label>
                                         <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {{-- Contenido de los puntos (se mantiene igual) --}}
                                             <div>
                                                 <label for="puntos_1" class="text-xs text-gray-500">1 Punto</label>
                                                 <input type="number" wire:model.live.debounce.300ms="puntos_1"
@@ -367,8 +368,17 @@ $save = function () {
                                         </div>
                                     </div>
 
-                                    {{-- Observaciones --}}
-                                    <div class="sm:col-span-6">
+                                    {{-- Fila 4: Rollo y Observaciones (Comparten fila) --}}
+                                    <div class="sm:col-span-2">
+                                        <label for="rollo"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Rollo</label>
+                                        <input type="text" wire:model.live.debounce.300ms="rollo" id="rollo"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        @error('rollo') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div class="sm:col-span-4">
                                         <label for="observaciones"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones</label>
                                         <textarea wire:model.live.debounce.300ms="observaciones" id="observaciones"
@@ -407,7 +417,8 @@ $save = function () {
 
                     {{-- Tabla de Registros --}}
                     <div class="mt-10">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">Registros Recientes
+                        <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Registros del día: {{ now()->format('d - m - Y') }}
                         </h3>
                         <div class="mt-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -428,6 +439,9 @@ $save = function () {
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Yardage Ticket</th>
+                                                <th
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                                    Yardage Actual</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Ancho cortable</th>
@@ -502,15 +516,12 @@ $save = function () {
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No
+                                                <td colspan="12" class="px-6 py-4 text-center text-sm text-gray-500">No
                                                     hay registros de inspección todavía.</td>
                                             </tr>
                                             @endforelse
                                         </tbody>
                                     </table>
-                                </div>
-                                <div class="mt-4">
-                                    {{ $registros->links() }}
                                 </div>
                             </div>
                         </div>
