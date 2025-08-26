@@ -1,8 +1,9 @@
 <?php
 
-use function Livewire\Volt\{state, rules, with, on,  mount};
+use function Livewire\Volt\{state, rules, with, on, mount, computed}; // MODIFICADO: Se añade 'computed'
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
@@ -26,6 +27,70 @@ mount(function () {
         $this->numero_recepcion = $ultimoReporte->numero_recepcion;
     }
 });
+
+// ------------------- NUEVA LÓGICA DE BÚSQUEDA -------------------
+// Estado para el término de búsqueda
+state('searchTerm', '');
+
+// Función para realizar la búsqueda inteligente
+$buscarInformacionTela = function () {
+    // 1. Validar que el término de búsqueda no esté vacío
+    $this->validate(['searchTerm' => 'required|string|min:3']);
+
+    try {
+        // 2. Determinar la columna de búsqueda ("búsqueda inteligente")
+        $esBusquedaPorRecepcion = strtoupper(substr($this->searchTerm, 0, 3)) === 'REC';
+        
+        $columna = $esBusquedaPorRecepcion ? 'numero_diario' : 'orden_compra';
+        $valor = $this->searchTerm;
+
+        // ======================= INICIO DEL CAMBIO CON CACHÉ =======================
+
+        // 3. Crear una clave única para este término de búsqueda.
+        $cacheKey = 'inspeccion_tela_search_' . md5($valor);
+
+        // 4. Usar Cache::remember para obtener los datos.
+        // El resultado se guardará por 15 minutos (900 segundos).
+        $telaInfo = Cache::remember($cacheKey, 900, function () use ($columna, $valor) {
+            // ✅ Esta función anónima SÓLO se ejecutará si el resultado
+            // NO se encuentra en el caché o si ya expiró.
+            return InspeccionTela::where($columna, $valor)->first();
+        });
+
+        // ======================== FIN DEL CAMBIO CON CACHÉ =========================
+
+
+        // 5. Si se encuentra un resultado (desde el caché o la BD), poblar el formulario
+        if ($telaInfo) {
+            $this->proveedor = $telaInfo->proveedor;
+            $this->articulo = $telaInfo->estilo . '.' . $telaInfo->color;
+            $this->color_nombre = $telaInfo->nombre_producto;
+            $this->material = $telaInfo->nombre_producto; 
+            $this->orden_compra = $telaInfo->orden_compra;
+            $this->numero_recepcion = $telaInfo->numero_diario;
+
+            // Notificación de éxito
+            $this->dispatch('swal:toast', [
+                'icon' => 'success',
+                'title' => 'Información encontrada y cargada.'
+            ]);
+
+        } else {
+            // Si no se encuentra, notificar al usuario
+            $this->dispatch('swal:toast', [
+                'icon' => 'warning',
+                'title' => 'No se encontraron registros con ese criterio.'
+            ]);
+        }
+    } catch (\Exception $e) {
+        // Manejo de errores de conexión o consulta
+        $this->dispatch('swal:toast', [
+            'icon' => 'error',
+            'title' => 'Error al buscar la información: ' . $e->getMessage()
+        ]);
+    }
+};
+// ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
 state([
@@ -55,9 +120,9 @@ state([
 ]);
 
 // 3. Datos de ejemplo para los selects
-state('proveedores', fn() => ['Kaltex', 'Tavex', 'Global Denim', 'Otro']);
-state('articulos', fn() => ['Denim 12oz', 'Gabardina Stretch', 'Popelina Lisa', 'Otro']);
-state('materiales', fn() => ['100% Algodón', '98% Algodón / 2% Spandex', '100% Poliéster', 'Otro']);
+//state('proveedores', fn() => ['Kaltex', 'Tavex', 'Global Denim', 'Otro']);
+//state('articulos', fn() => ['Denim 12oz', 'Gabardina Stretch', 'Popelina Lisa', 'Otro']);
+//state('materiales', fn() => ['100% Algodón', '98% Algodón / 2% Spandex', '100% Poliéster', 'Otro']);
 
 // 4. Cargar los registros existentes para la tabla
 with(fn () => [
@@ -173,13 +238,49 @@ $save = function () {
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="text-2xl font-bold mb-1">Inspección de Tela</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Complete todos los campos para registrar
-                        una nueva inspección.</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Busque la Orden de Compra o No. de
+                        Recepción para cargar los datos del encabezado.</p>
 
                     <form wire:submit.prevent="save">
                         <div class="space-y-8">
 
-                            {{-- SECCIÓN 1: Encabezado del Reporte --}}
+                            {{-- =================================================================== --}}
+                            {{-- =================== NUEVO: SECCIÓN DE BÚSQUEDA =================== --}}
+                            {{-- =================================================================== --}}
+                            <div
+                                class="p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-gray-900/50">
+                                <h3 class="text-md font-medium leading-6 text-gray-900 dark:text-gray-100">Búsqueda de
+                                    Información</h3>
+                                <div class="mt-4 flex items-center gap-x-3">
+                                    <div class="flex-grow">
+                                        <label for="search_term" class="sr-only">Buscar</label>
+                                        <input type="text" id="search_term" wire:model="searchTerm"
+                                            wire:keydown.enter="buscarInformacionTela"
+                                            placeholder="Escriba la OC o el No. de Recepción (ej. REC123)"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        @error('searchTerm') <span class="text-red-500 text-xs mt-1">{{ $message
+                                            }}</span> @enderror
+                                    </div>
+                                    <button type="button" wire:click="buscarInformacionTela"
+                                        wire:loading.attr="disabled"
+                                        class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                                        <svg wire:loading wire:target="buscarInformacionTela"
+                                            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                        <span>Buscar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- ==================================================================== --}}
+                            {{-- ============= MODIFICADO: SECCIÓN 1 Encabezado del Reporte =========== --}}
+                            {{-- ==================================================================== --}}
                             <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">1. Encabezado
                                 </h3>
@@ -189,38 +290,30 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="articulo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Artículo</label>
-                                        <select id="articulo" wire:model.live.debounce.300ms="articulo"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                            <option value="">Seleccione...</option>
-                                            @foreach($articulos as $item)
-                                            <option value="{{ $item }}">{{ $item }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
+                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
+                                            <input type="text" readonly wire:model="articulo" id="articulo"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                            @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                            @enderror
                                     </div>
 
                                     <div class="sm:col-span-2">
                                         <label for="proveedor"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Proveedor</label>
-                                        <select id="proveedor" wire:model.live.debounce.300ms="proveedor"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                            <option value="">Seleccione...</option>
-                                            @foreach($proveedores as $prov)
-                                            <option value="{{ $prov }}">{{ $prov }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
+                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
+                                            <input type="text" readonly wire:model="proveedor" id="proveedor"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                            @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                            @enderror
                                     </div>
 
                                     <div class="sm:col-span-2">
                                         <label for="color_nombre"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre
                                             Color</label>
-                                        <input type="text" wire:model.live.debounce.300ms="color_nombre"
-                                            id="color_nombre"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        {{-- MODIFICADO: añadido readonly y estilos --}}
+                                        <input type="text" readonly wire:model="color_nombre" id="color_nombre"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
                                         @error('color_nombre') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -230,6 +323,7 @@ $save = function () {
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Yd)</label>
+                                        {{-- SIN CAMBIOS: Este campo sigue siendo editable --}}
                                         <input type="number" step="0.01"
                                             wire:model.live.debounce.300ms="ancho_contratado" id="ancho_contratado"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -239,23 +333,19 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="material"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Material</label>
-                                        <select id="material" wire:model.live.debounce.300ms="material"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                            <option value="">Seleccione...</option>
-                                            @foreach($materiales as $mat)
-                                            <option value="{{ $mat }}">{{ $mat }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
+                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
+                                            <input type="text" readonly wire:model="material" id="material"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                            @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                            @enderror
                                     </div>
                                     <div class="sm:col-span-1">
                                         <label for="orden_compra"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Orden
                                             Compra</label>
-                                        <input type="text" wire:model.live.debounce.300ms="orden_compra"
-                                            id="orden_compra"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        {{-- MODIFICADO: añadido readonly y estilos --}}
+                                        <input type="text" readonly wire:model="orden_compra" id="orden_compra"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
                                         @error('orden_compra') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -263,9 +353,9 @@ $save = function () {
                                         <label for="numero_recepcion"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">No.
                                             Recepción</label>
-                                        <input type="text" wire:model.live.debounce.300ms="numero_recepcion"
-                                            id="numero_recepcion"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        {{-- MODIFICADO: añadido readonly y estilos --}}
+                                        <input type="text" readonly wire:model="numero_recepcion" id="numero_recepcion"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
                                         @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
