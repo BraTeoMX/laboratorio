@@ -3,6 +3,7 @@
 use function Livewire\Volt\{state, rules, with, on,  mount};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
 
