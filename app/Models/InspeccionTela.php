@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class InspeccionTela extends Model
+{
+    use HasFactory;
+
+    /**
+     * La conexión de base de datos que debe ser utilizada por el modelo.
+     * Aquí le decimos que use la configuración 'sqlsrv_dev' de tu config/database.php,
+     * la cual toma los datos de tu .env.
+     *
+     * @var string
+     */
+    protected $connection = 'sqlsrv_dev';
+
+    /**
+     * El nombre de la tabla asociada con el modelo.
+     * Laravel intentaría buscar 'inspeccion_telas' (plural), por eso lo especificamos.
+     *
+     * @var string
+     */
+    protected $table = 'inspeccion_telas';
+
+    /**
+     * Indica si el modelo debe tener timestamps (created_at y updated_at).
+     * Si tu tabla NO tiene estas columnas, ponlo en false para evitar errores.
+     *
+     * @var bool
+     */
+    public $timestamps = false; // Cámbialo a true si sí tienes las columnas
+
+    /**
+     * El nombre de la clave primaria.
+     * Laravel asume que es 'id'. Si tu tabla usa un nombre diferente, especifícalo aquí.
+     *
+     * @var string
+     */
+    // protected $primaryKey = 'id_inspeccion'; // Descomenta y ajusta si es necesario
+
+    /**
+     * Los atributos que se pueden asignar masivamente.
+     * Es una buena práctica de seguridad definir qué columnas se pueden llenar
+     * usando métodos como create() o update().
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'numero_diario'
+        ,'orden_compra'
+        ,'proveedor'
+        ,'estilo'
+        ,'numero_linea'
+        ,'cantidad_rec'
+        ,'nombre_producto'
+        ,'cantidad_ordenada'
+        ,'nombre_producto_externo'
+        ,'lote'
+        ,'talla'
+        ,'color'
+        ,'fecha_creacion'
+        // Agrega aquí todas las columnas de tu tabla 'inspeccion_tela' que quieras poder modificar
+    ];
+}
