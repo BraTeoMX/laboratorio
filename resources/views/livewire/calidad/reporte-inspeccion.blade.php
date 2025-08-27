@@ -4,11 +4,11 @@ use function Livewire\Volt\{state, rules, with, on, mount, computed}; // MODIFIC
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
 
-// 🔥 NUEVA LÓGICA: Se ejecuta al cargar el componente
 mount(function () {
     // Buscar el último reporte creado HOY por el USUARIO ACTUAL
     $ultimoReporte = InspeccionReporte::where('user_id', Auth::id())
@@ -32,63 +32,88 @@ mount(function () {
 // Estado para el término de búsqueda
 state('searchTerm', '');
 
+// >>> NUEVO: Estados para almacenar las opciones de los selects <<<
+state([
+    'proveedoresOptions' => [],
+    'articulosOptions' => [],
+    'colorNombresOptions' => [],
+    'materialesOptions' => [],
+    'ordenesCompraOptions' => [],
+    'numerosRecepcionOptions' => [],
+]);
+
 // Función para realizar la búsqueda inteligente
 $buscarInformacionTela = function () {
     // 1. Validar que el término de búsqueda no esté vacío
     $this->validate(['searchTerm' => 'required|string|min:3']);
 
     try {
-        // 2. Determinar la columna de búsqueda ("búsqueda inteligente")
+        // 2. Determinar la columna de búsqueda
         $esBusquedaPorRecepcion = strtoupper(substr($this->searchTerm, 0, 3)) === 'REC';
-        
         $columna = $esBusquedaPorRecepcion ? 'numero_diario' : 'orden_compra';
         $valor = $this->searchTerm;
 
-        // ======================= INICIO DEL CAMBIO CON CACHÉ =======================
+        // 3. Crear clave de caché
+        $cacheKey = 'inspeccion_tela_search_collection_' . md5($valor);
 
-        // 3. Crear una clave única para este término de búsqueda.
-        $cacheKey = 'inspeccion_tela_search_' . md5($valor);
-
-        // 4. Usar Cache::remember para obtener los datos.
-        // El resultado se guardará por 15 minutos (900 segundos).
-        $telaInfo = Cache::remember($cacheKey, 900, function () use ($columna, $valor) {
-            // ✅ Esta función anónima SÓLO se ejecutará si el resultado
-            // NO se encuentra en el caché o si ya expiró.
-            return InspeccionTela::where($columna, $valor)->first();
+        // 4. Usar Cache::remember para obtener la colección de datos.
+        // >>> MODIFICADO: Se cambia ->first() por ->get() para obtener una colección <<<
+        $telasInfo = Cache::remember($cacheKey, 900, function () use ($columna, $valor) {
+            return InspeccionTela::where($columna, $valor)->get();
         });
 
-        // ======================== FIN DEL CAMBIO CON CACHÉ =========================
+        // 5. Si la colección NO está vacía, procesar los datos
+        if ($telasInfo->isNotEmpty()) {
+            // >>> NUEVO: Extraer opciones únicas de la colección <<<
+            $this->proveedoresOptions = $telasInfo->pluck('proveedor')->unique()->values()->all();
+            $this->articulosOptions = $telasInfo->map(fn($item) => $item->estilo . '.' . $item->color)->unique()->values()->all();
+            $this->colorNombresOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
+            $this->materialesOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
+            $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
+            $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
 
+            // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
+            $primeraTela = $telasInfo->first();
 
-        // 5. Si se encuentra un resultado (desde el caché o la BD), poblar el formulario
-        if ($telaInfo) {
-            $this->proveedor = $telaInfo->proveedor;
-            $this->articulo = $telaInfo->estilo . '.' . $telaInfo->color;
-            $this->color_nombre = $telaInfo->nombre_producto;
-            $this->material = $telaInfo->nombre_producto; 
-            $this->orden_compra = $telaInfo->orden_compra;
-            $this->numero_recepcion = $telaInfo->numero_diario;
+            // 6. Poblar el formulario con los datos del primer registro encontrado
+            $this->proveedor = $primeraTela->proveedor;
+            $this->articulo = $primeraTela->estilo . '.' . $primeraTela->color;
+            $this->color_nombre = $primeraTela->nombre_producto;
+            $this->material = $primeraTela->nombre_producto;
+            $this->orden_compra = $primeraTela->orden_compra;
+            $this->numero_recepcion = $primeraTela->numero_diario;
+            // El campo 'ancho_contratado' se deja para que el usuario lo llene manualmente si es necesario.
 
             // Notificación de éxito
             $this->dispatch('swal:toast', [
                 'icon' => 'success',
-                'title' => 'Información encontrada y cargada.'
+                'title' => 'Información encontrada. Seleccione las opciones correctas.'
             ]);
 
         } else {
-            // Si no se encuentra, notificar al usuario
+            // Si no se encuentra, limpiar y notificar al usuario
+            $this->resetHeaderFormAndOptions(); // Limpiar formulario y opciones
             $this->dispatch('swal:toast', [
                 'icon' => 'warning',
                 'title' => 'No se encontraron registros con ese criterio.'
             ]);
         }
     } catch (\Exception $e) {
-        // Manejo de errores de conexión o consulta
+        // Manejo de errores
+        $this->resetHeaderFormAndOptions();
         $this->dispatch('swal:toast', [
             'icon' => 'error',
             'title' => 'Error al buscar la información: ' . $e->getMessage()
         ]);
     }
+};
+
+// >>> NUEVO: Función para limpiar el encabezado y las opciones de búsqueda <<<
+$resetHeaderFormAndOptions = function() {
+    $this->reset(
+        'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
+        'proveedoresOptions', 'articulosOptions', 'colorNombresOptions', 'materialesOptions', 'ordenesCompraOptions', 'numerosRecepcionOptions'
+    );
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
@@ -290,9 +315,16 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="articulo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Artículo</label>
-                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
-                                            <input type="text" readonly wire:model="articulo" id="articulo"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="articulo" id="articulo"
+                                                @disabled(empty($articulosOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($articulosOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque para cargar opciones --</option>
+                                                @endforelse
+                                            </select>
                                             @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                     </div>
@@ -300,9 +332,16 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="proveedor"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Proveedor</label>
-                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
-                                            <input type="text" readonly wire:model="proveedor" id="proveedor"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="proveedor" id="proveedor"
+                                                @disabled(empty($proveedoresOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($proveedoresOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque para cargar opciones --</option>
+                                                @endforelse
+                                            </select>
                                             @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                     </div>
@@ -311,11 +350,18 @@ $save = function () {
                                         <label for="color_nombre"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre
                                             Color</label>
-                                        {{-- MODIFICADO: añadido readonly y estilos --}}
-                                        <input type="text" readonly wire:model="color_nombre" id="color_nombre"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
-                                        @error('color_nombre') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="color_nombre" id="color_nombre"
+                                                @disabled(empty($colorNombresOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($colorNombresOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque para cargar opciones --</option>
+                                                @endforelse
+                                            </select>
+                                            @error('color_nombre') <span class="text-red-500 text-xs">{{ $message
+                                                }}</span> @enderror
                                     </div>
 
                                     {{-- Ancho, Material, OC, Recepción --}}
@@ -330,34 +376,58 @@ $save = function () {
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
+
                                     <div class="sm:col-span-2">
                                         <label for="material"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Material</label>
-                                        {{-- MODIFICADO: de <select> a <input readonly> --}}
-                                            <input type="text" readonly wire:model="material" id="material"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="material" id="material"
+                                                @disabled(empty($materialesOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($materialesOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque para cargar opciones --</option>
+                                                @endforelse
+                                            </select>
                                             @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                     </div>
+
                                     <div class="sm:col-span-1">
                                         <label for="orden_compra"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Orden
                                             Compra</label>
-                                        {{-- MODIFICADO: añadido readonly y estilos --}}
-                                        <input type="text" readonly wire:model="orden_compra" id="orden_compra"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
-                                        @error('orden_compra') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="orden_compra" id="orden_compra"
+                                                @disabled(empty($ordenesCompraOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($ordenesCompraOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque --</option>
+                                                @endforelse
+                                            </select>
+                                            @error('orden_compra') <span class="text-red-500 text-xs">{{ $message
+                                                }}</span> @enderror
                                     </div>
+
                                     <div class="sm:col-span-1">
                                         <label for="numero_recepcion"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">No.
                                             Recepción</label>
-                                        {{-- MODIFICADO: añadido readonly y estilos --}}
-                                        <input type="text" readonly wire:model="numero_recepcion" id="numero_recepcion"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-not-allowed">
-                                        @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
-                                            }}</span> @enderror
+                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
+                                            <select wire:model="numero_recepcion" id="numero_recepcion"
+                                                @disabled(empty($numerosRecepcionOptions))
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                                @forelse($numerosRecepcionOptions as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                @empty
+                                                <option value="">-- Busque --</option>
+                                                @endforelse
+                                            </select>
+                                            @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
+                                                }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
