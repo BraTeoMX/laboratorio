@@ -2,14 +2,13 @@
 import Swal from 'sweetalert2';
 import 'sweetalert2/src/sweetalert2.scss';
 
-// Hacerlo accesible globalmente (esto puede quedar afuera)
+// Hacerlo accesible globalmente
 window.Swal = Swal;
 
 // Esperamos al evento 'livewire:init' para asegurarnos de que el objeto Livewire exista
 document.addEventListener('livewire:init', () => {
     // =======================================================================
     // LISTENERS DE EVENTOS DE LIVEWIRE
-    // Todo lo que usa 'Livewire' debe ir DENTRO de este bloque.
     // =======================================================================
 
     // Listener para la alerta de CONFIRMACIÓN
@@ -23,7 +22,6 @@ document.addEventListener('livewire:init', () => {
             denyButtonText: event.detail[0].denyButtonText,
         }).then((result) => {
             if (result.isConfirmed) {
-                // ¡AHORA SÍ! 'Livewire' ya está cargado y listo para usarse.
                 Livewire.dispatch(event.detail[0].method, event.detail[0].params);
             }
         });
@@ -41,4 +39,25 @@ document.addEventListener('livewire:init', () => {
             title: event.detail[0].title
         });
     });
-});
+
+    // ==================================================================
+    // >>> AÑADE ESTE NUEVO BLOQUE AQUÍ <<<
+    // Listener para errores que también registra en la consola
+    // ==================================================================
+    document.addEventListener('show-error', event => {
+        // 1. Muestra el mensaje detallado en la consola del navegador
+        console.error('Error desde Livewire:', event.detail[0].message);
+
+        // 2. Muestra un toast amigable al usuario
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000, // Le damos un poco más de tiempo para que se vea
+            timerProgressBar: true,
+            icon: 'error', // El ícono siempre será de error para este listener
+            title: event.detail[0].title // El título amigable para el usuario
+        });
+    });
+
+}); // <-- Cierre del 'livewire:init'

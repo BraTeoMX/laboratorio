@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log; 
 use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
@@ -68,7 +69,7 @@ $buscarInformacionTela = function () {
             $this->proveedoresOptions = $telasInfo->pluck('proveedor')->unique()->values()->all();
             $this->articulosOptions = $telasInfo->map(fn($item) => $item->estilo . '.' . $item->color)->unique()->values()->all();
             $this->colorNombresOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
-            $this->materialesOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
+            $this->materialesOptions = $telasInfo->pluck('estilo_externo')->unique()->values()->all();
             $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
             $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
 
@@ -79,7 +80,7 @@ $buscarInformacionTela = function () {
             $this->proveedor = $primeraTela->proveedor;
             $this->articulo = $primeraTela->estilo . '.' . $primeraTela->color;
             $this->color_nombre = $primeraTela->nombre_producto;
-            $this->material = $primeraTela->nombre_producto;
+            $this->material = $primeraTela->estilo_externo;
             $this->orden_compra = $primeraTela->orden_compra;
             $this->numero_recepcion = $primeraTela->numero_diario;
             // El campo 'ancho_contratado' se deja para que el usuario lo llene manualmente si es necesario.
@@ -91,8 +92,9 @@ $buscarInformacionTela = function () {
             ]);
 
         } else {
+            Log::error($e);
             // Si no se encuentra, limpiar y notificar al usuario
-            $this->resetHeaderFormAndOptions(); // Limpiar formulario y opciones
+            $this->resetSearchOptions(); // Limpiar formulario y opciones
             $this->dispatch('swal:toast', [
                 'icon' => 'warning',
                 'title' => 'No se encontraron registros con ese criterio.'
@@ -100,7 +102,8 @@ $buscarInformacionTela = function () {
         }
     } catch (\Exception $e) {
         // Manejo de errores
-        $this->resetHeaderFormAndOptions();
+        Log::error($e);
+        $this->resetSearchOptions(); 
         $this->dispatch('swal:toast', [
             'icon' => 'error',
             'title' => 'Error al buscar la información: ' . $e->getMessage()
@@ -109,11 +112,20 @@ $buscarInformacionTela = function () {
 };
 
 // >>> NUEVO: Función para limpiar el encabezado y las opciones de búsqueda <<<
-$resetHeaderFormAndOptions = function() {
+/* $resetHeaderFormAndOptions = function() {
     $this->reset(
         'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
         'proveedoresOptions', 'articulosOptions', 'colorNombresOptions', 'materialesOptions', 'ordenesCompraOptions', 'numerosRecepcionOptions'
     );
+};*/
+// AHORA (Usa esta en su lugar)
+$resetSearchOptions = function() {
+    $this->proveedoresOptions = [];
+    $this->articulosOptions = [];
+    $this->colorNombresOptions = [];
+    $this->materialesOptions = [];
+    $this->ordenesCompraOptions = [];
+    $this->numerosRecepcionOptions = [];
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
