@@ -219,6 +219,5 @@
 
     </div>
 
-    <script src="//unpkg.com/alpinejs" defer></script>
 
 </x-layouts.app>
