@@ -35,7 +35,10 @@
                 {{ __('Inspección de Tela') }}
             </x-nav-link>
 
-            {{-- Aquí podrías añadir enlaces a otros formularios en el futuro --}}
+            <x-nav-link :href="route('calidad.auditoria')" icon="clipboard-document-check"
+                :active="request()->routeIs('calidad.auditoria')">
+                {{ __('Auditoría a Materia Prima') }}
+            </x-nav-link>
         </flux:navlist.group>
 
         <flux:spacer />
