@@ -39,13 +39,13 @@ class AuditoriaMateriaPrimaDetalle extends Model
     ];
 
     /**
-     * Los atributos que deben ser casteados.
-     */
+      * Los atributos que deben ser casteados.
+      */
     protected $casts = [
         'metros' => 'decimal:2',
         'peso_mt' => 'decimal:2',
         'ancho' => 'decimal:2',
-        'enlongacion' => 'decimal:2',
+        'enlongacion' => 'decimal:2', // ← Ahora soporta hasta 999999.99
         'encogimiento' => 'decimal:2'
     ];
 

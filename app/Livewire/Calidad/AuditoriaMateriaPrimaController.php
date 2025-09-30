@@ -55,7 +55,7 @@ $buscarInformacionMateriaPrima = function () {
         $cacheKey = 'auditoria_materia_prima_search_collection_' . md5($this->searchTerm);
 
         // Usar Cache::remember para obtener la colección de datos.
-        $materiasPrimas = Cache::remember($cacheKey, 900, function () {
+        $materiasPrimas = Cache::remember($cacheKey, 90000, function () {
             return InspeccionTela::where('orden_compra', $this->searchTerm)
                 ->orWhere('numero_diario', 'LIKE', '%' . $this->searchTerm . '%')
                 ->get();
@@ -164,7 +164,7 @@ rules([
     'metros' => 'required|numeric|min:0',
     'peso_mt' => 'nullable|numeric|min:0',
     'ancho_detalle' => 'nullable|numeric|min:0',
-    'enlongacion_detalle' => 'nullable|numeric|min:0',
+    'enlongacion_detalle' => 'nullable|numeric|min:0|max:999999.99', // ← Límite máximo ajustado
     'encogimiento' => 'nullable|numeric|min:0',
 ]);
 

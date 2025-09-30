@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::connection('sqlsrv_dev')->create('auditoria_materia_primas', function (Blueprint $table) {
+        Schema::connection('mysql')->create('auditoria_materia_primas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->comment('ID del auditor');
             $table->string('articulo', 255);
@@ -29,6 +29,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection('sqlsrv_dev')->dropIfExists('auditoria_materia_primas');
+        Schema::connection('mysql')->dropIfExists('auditoria_materia_primas');
     }
 };
