@@ -45,7 +45,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('users', 'users.index')->name('users.index');
     Volt::route('calidad/inspeccion-tela', 'calidad.reporte-inspeccion')->name('calidad.inspeccion');
     Volt::route('calidad/auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('calidad.auditoria');
-    
+
+    // Vista específica para auditores (role_id = 5)
+    Route::view('vista-auditor', 'vistaAuditor')->name('vistaAuditor');
+
 });
 
 require __DIR__.'/auth.php';

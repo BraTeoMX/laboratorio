@@ -14,6 +14,7 @@
             <x-app-logo />
         </a>
 
+        @if(auth()->user()->role_id != 5)
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
                 <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
@@ -29,6 +30,7 @@
                 </x-nav-link>
             </flux:navlist.group>
         </flux:navlist>
+        @endif
         <flux:navlist.group heading="{{ __('Registros') }}" expandable :expanded="request()->routeIs('calidad.*')">
             <x-nav-link :href="route('calidad.inspeccion')" icon="clipboard-document-list"
                 :active="request()->routeIs('calidad.inspeccion')">
