@@ -14,7 +14,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
 // Definición del componente Volt con el layout de autenticación
-new #[Layout('components.layouts.auth')] class extends Component {
+new #[Layout('components.layouts.auth.card')] class extends Component {
     // Propiedad para almacenar la credencial (email o número de empleado)
     #[Validate('required|string')]
     public string $credential = '';
