@@ -53,7 +53,7 @@ $buscarInformacionMateriaPrima = function () {
         $cacheKey = 'auditoria_materia_prima_search_collection_' . md5($this->searchTerm);
 
         // Usar Cache::remember para obtener la colección de datos.
-        $materiasPrimas = Cache::remember($cacheKey, 900, function () {
+        $materiasPrimas = Cache::remember($cacheKey, 18000, function () {
             return InspeccionTela::where('orden_compra', $this->searchTerm)
                 ->orWhere('numero_diario', 'LIKE', '%' . $this->searchTerm . '%')
                 ->get();

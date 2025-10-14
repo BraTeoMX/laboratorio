@@ -59,7 +59,7 @@ $buscarInformacionTela = function () {
 
         // 4. Usar Cache::remember para obtener la colección de datos.
         // >>> MODIFICADO: Se cambia ->first() por ->get() para obtener una colección <<<
-        $telasInfo = Cache::remember($cacheKey, 900, function () use ($columna, $valor) {
+        $telasInfo = Cache::remember($cacheKey, 18000, function () use ($columna, $valor) {
             return InspeccionTela::where($columna, $valor)->get();
         });
 
