@@ -80,7 +80,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         // Determina la ruta de destino según el rol del usuario
         $routeName = match ((int) $authenticatedUser->role_id) {
-            1, 2, 3, 4 => 'dashboard',
+            1, 2, 4    => 'dashboard',
+            3           => 'vistaGestor',
             5           => 'vistaAuditor',
             default     => 'dashboard', // Ruta por defecto como respaldo
         };

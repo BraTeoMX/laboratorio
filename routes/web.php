@@ -49,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Vista específica para auditores (role_id = 5)
     Route::view('vista-auditor', 'vistaAuditor')->name('vistaAuditor');
 
+    // Vista específica para gestores (role_id = 3)
+    Route::view('vista-gestor', 'vistaGestor')->name('vistaGestor');
+
 });
 
 require __DIR__.'/auth.php';

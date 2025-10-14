@@ -28,9 +28,14 @@ class RedirectBasedOnRole
             return redirect()->route('dashboard');
         }
 
-        // Si el rol es 2, 3, o 4 y no está en 'dashboard2', lo mandamos ahí.
-        if (in_array($user->role_id, [2, 3, 4]) && $currentRouteName !== 'dashboard2') {
+        // Si el rol es 2 o 4 y no está en 'dashboard2', lo mandamos ahí.
+        if (in_array($user->role_id, [2, 4]) && $currentRouteName !== 'dashboard2') {
             return redirect()->route('dashboard2');
+        }
+
+        // Si el rol es 3 (Gestor) y no está en 'vistaGestor', lo mandamos ahí.
+        if ($user->role_id == 3 && $currentRouteName !== 'vistaGestor') {
+            return redirect()->route('vistaGestor');
         }
 
         // Si el rol es 5 (Auditor) y no está en 'vistaAuditor', lo mandamos ahí.

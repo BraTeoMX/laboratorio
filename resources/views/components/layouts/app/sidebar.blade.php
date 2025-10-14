@@ -14,7 +14,23 @@
             <x-app-logo />
         </a>
 
-        @if(auth()->user()->role_id != 5)
+        @if(auth()->user()->role_id == 3)
+        <flux:navlist variant="outline">
+            <flux:navlist.group :heading="__('Gestión')" class="grid">
+                <x-nav-link :href="route('vistaGestor')" icon="cog-6-tooth" :active="request()->routeIs('vistaGestor')">
+                    {{ __('Panel de Gestión') }}
+                </x-nav-link>
+            </flux:navlist.group>
+        </flux:navlist>
+        <flux:navlist variant="outline">
+            <flux:navlist.group heading="{{ __('Administrador') }}" expandable
+                :expanded="request()->routeIs('customers.index') || request()->routeIs('users.*')">
+                <x-nav-link :href="route('users.index')" icon="user-group" :active="request()->routeIs('users.*')">
+                    {{ __('Adm. Usuarios') }}
+                </x-nav-link>
+            </flux:navlist.group>
+        </flux:navlist>
+        @elseif(auth()->user()->role_id != 5)
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
                 <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
