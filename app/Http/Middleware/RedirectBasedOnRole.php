@@ -24,12 +24,12 @@ class RedirectBasedOnRole
 
         // Lógica de redirección
         // Si el rol es 1 y no está en 'dashboard', lo mandamos ahí.
-        if ($user->role_id == 1 && $currentRouteName !== 'dashboard') {
+        if (in_array($user->role_id, [1, 2, 4]) && $currentRouteName !== 'dashboard') {
             return redirect()->route('dashboard');
         }
 
         // Si el rol es 2 o 4 y no está en 'dashboard2', lo mandamos ahí.
-        if (in_array($user->role_id, [2, 4]) && $currentRouteName !== 'dashboard2') {
+        if ($user->role_id == 6 && $currentRouteName !== 'dashboard2') {
             return redirect()->route('dashboard2');
         }
 

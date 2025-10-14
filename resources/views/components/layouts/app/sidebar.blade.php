@@ -30,7 +30,16 @@
                 </x-nav-link>
             </flux:navlist.group>
         </flux:navlist>
-        @elseif(auth()->user()->role_id != 5)
+        @elseif(auth()->user()->role_id == 5)
+        <flux:navlist variant="outline">
+            <flux:navlist.group :heading="__('Auditoría')" class="grid">
+                <x-nav-link :href="route('vistaAuditor')" icon="clipboard-document-check"
+                    :active="request()->routeIs('vistaAuditor')">
+                    {{ __('Panel de Auditor') }}
+                </x-nav-link>
+            </flux:navlist.group>
+        </flux:navlist>
+        @else
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
                 <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
