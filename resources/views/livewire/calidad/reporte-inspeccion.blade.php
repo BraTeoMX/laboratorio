@@ -622,13 +622,10 @@ $save = function () {
                                             <tr>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    WEB No.</th>
+                                                    Numero Lote teñido</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Numero piezas</th>
-                                                <th
-                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Numero Lote teñido</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Yardage Ticket</th>
@@ -668,14 +665,13 @@ $save = function () {
                                             primero como ejemplo --}}
                                             @php $detalle = $registro->detalles->first(); @endphp
                                             <tr wire:key="{{ $registro->id }}">
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">{{
-                                                    $detalle?->web_no }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
-                                                    $detalle?->numero_piezas
-                                                    }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{
                                                     $detalle?->numero_lote ??
                                                     'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
+                                                    $detalle?->numero_piezas
+                                                    }}</td>
+
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{
                                                     $detalle?->yarda_ticket ??
                                                     'N/A' }}</td>
