@@ -152,7 +152,6 @@ state([
     'puntos_2' => 0,
     'puntos_3' => 0,
     'puntos_4' => 0,
-    'rollo' => '',
     'observaciones' => ''
 ]);
 
@@ -191,7 +190,6 @@ rules([
     'puntos_2' => 'required|integer|min:0',
     'puntos_3' => 'required|integer|min:0',
     'puntos_4' => 'required|integer|min:0',
-    'rollo' => 'required|string|max:255',
     'observaciones' => 'nullable|string',
 ]);
 
@@ -200,7 +198,7 @@ $resetForm = function() {
     $this->reset(
         //'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
         'web_no', 'numero_piezas', 'numero_lote', 'yarda_ticket', 'yarda_actual', 'ancho_cortable',
-        'puntos_1', 'puntos_2', 'puntos_3', 'puntos_4', 'rollo', 'observaciones'
+        'puntos_1', 'puntos_2', 'puntos_3', 'puntos_4', 'observaciones'
     );
     // Reiniciar los contadores de puntos a 0
     $this->puntos_1 = 0;
@@ -240,7 +238,6 @@ $save = function () {
                 'puntos_2' => $validatedData['puntos_2'],
                 'puntos_3' => $validatedData['puntos_3'],
                 'puntos_4' => $validatedData['puntos_4'],
-                'rollo' => $validatedData['rollo'],
                 'observaciones' => $validatedData['observaciones'],
             ]);
         });
@@ -561,17 +558,8 @@ $save = function () {
                                         </div>
                                     </div>
 
-                                    {{-- Fila 4: Rollo y Observaciones (Comparten fila) --}}
-                                    <div class="sm:col-span-2">
-                                        <label for="rollo"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Rollo</label>
-                                        <input type="text" wire:model.live.debounce.300ms="rollo" id="rollo"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        @error('rollo') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-
-                                    <div class="sm:col-span-4">
+                                    {{-- Fila 4: Observaciones --}}
+                                    <div class="sm:col-span-6">
                                         <label for="observaciones"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones</label>
                                         <textarea wire:model.live.debounce.300ms="observaciones" id="observaciones"
@@ -649,10 +637,7 @@ $save = function () {
                                                     4 puntos</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Total Puntos</th>
-                                                <th
-                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Rollo</th>
+                                                    Total Puntos por Rollo</th>
                                                 <th
                                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Observaciones</th>
@@ -697,15 +682,12 @@ $save = function () {
                                                     $detalle?->total_puntos ??
                                                     'N/A' }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{
-                                                    $detalle?->rollo ??
-                                                    'N/A' }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{
                                                     $detalle?->observaciones ??
                                                     'N/A' }}</td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="12" class="px-6 py-4 text-center text-sm text-gray-500">No
+                                                <td colspan="11" class="px-6 py-4 text-center text-sm text-gray-500">No
                                                     hay registros de inspección todavía.</td>
                                             </tr>
                                             @endforelse
