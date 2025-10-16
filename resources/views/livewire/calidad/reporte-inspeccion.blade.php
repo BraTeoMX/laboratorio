@@ -143,7 +143,6 @@ state([
 
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
 state([
-    'web_no' => '',
     'numero_piezas' => '',
     'numero_lote' => '', // Cambiado de 'numero_lote_teñido' para coincidir con la BD
     'yarda_ticket' => '',
@@ -181,7 +180,6 @@ rules([
     'numero_recepcion' => 'required|string|max:255',
     
     // Reglas para el Detalle
-    'web_no' => 'nullable|string|max:255',
     'numero_piezas' => 'required|integer|min:1',
     'numero_lote' => 'required|string|max:255',
     'yarda_ticket' => 'required|numeric|min:0',
@@ -198,7 +196,7 @@ rules([
 $resetForm = function() {
     $this->reset(
         //'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
-        'web_no', 'numero_piezas', 'numero_lote', 'yarda_ticket', 'yarda_actual', 'ancho_cortable',
+        'numero_piezas', 'numero_lote', 'yarda_ticket', 'yarda_actual', 'ancho_cortable',
         'puntos_1', 'puntos_2', 'puntos_3', 'puntos_4', 'observaciones'
     );
     // Reiniciar los contadores de puntos a 0
@@ -229,7 +227,6 @@ $save = function () {
 
             // --- PASO 2: Crear el detalle y asociarlo al reporte recién creado ---
             $reporte->detalles()->create([
-                'web_no' => $validatedData['web_no'],
                 'numero_piezas' => $validatedData['numero_piezas'],
                 'numero_lote' => $validatedData['numero_lote'],
                 'yarda_ticket' => $validatedData['yarda_ticket'],
@@ -464,15 +461,6 @@ $save = function () {
                                     </div>
 
 
-                                    <div class="sm:col-span-2">
-                                        <label for="web_no"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Web
-                                            No.</label>
-                                        <input type="text" wire:model.live.debounce.300ms="web_no" id="web_no"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        @error('web_no') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                        @enderror
-                                    </div>
 
                                     <div class="sm:col-span-2">
                                         <label for="numero_piezas"
