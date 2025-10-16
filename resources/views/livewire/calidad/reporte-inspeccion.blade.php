@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
+use App\Models\CatalogoDefecto;
 
 mount(function () {
     // Buscar el último reporte creado HOY por el USUARIO ACTUAL
@@ -452,6 +453,18 @@ $save = function () {
 
                                     {{-- Fila 1: Identificadores (3 columnas de igual tamaño) --}}
                                     <div class="sm:col-span-2">
+                                        <label for="ancho_cortable"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
+                                            Cortable</label>
+                                        <input type="number" step="0.01" wire:model.live.debounce.300ms="ancho_cortable"
+                                            id="ancho_cortable"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        @error('ancho_cortable') <span class="text-red-500 text-xs">{{ $message
+                                            }}</span> @enderror
+                                    </div>
+
+
+                                    <div class="sm:col-span-2">
                                         <label for="web_no"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Web
                                             No.</label>
@@ -503,17 +516,6 @@ $save = function () {
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('yarda_actual') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
-                                    </div>
-
-                                    <div class="sm:col-span-2">
-                                        <label for="ancho_cortable"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
-                                            Cortable</label>
-                                        <input type="number" step="0.01" wire:model.live.debounce.300ms="ancho_cortable"
-                                            id="ancho_cortable"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        @error('ancho_cortable') <span class="text-red-500 text-xs">{{ $message
-                                            }}</span> @enderror
                                     </div>
 
                                     {{-- Fila 3: Puntos (Ocupa toda la fila, sin cambios) --}}
