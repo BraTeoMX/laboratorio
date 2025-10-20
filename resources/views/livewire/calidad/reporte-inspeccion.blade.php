@@ -331,6 +331,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máquina</label>
                                         <select wire:model="maquina" id="maquina"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <option value="">-- Selecciona una opción --</option>
                                             @forelse(CatalogoMaquina::all() as $maquinaOption)
                                             <option value="{{ $maquinaOption->nombre }}">{{ $maquinaOption->nombre }}
                                             </option>
