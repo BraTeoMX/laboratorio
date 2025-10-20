@@ -10,6 +10,7 @@ use App\Models\InspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
 use App\Models\CatalogoDefecto;
+use App\Models\CatalogoMaquina;
 
 mount(function () {
     // Buscar el último reporte creado HOY por el USUARIO ACTUAL
@@ -20,6 +21,7 @@ mount(function () {
 
     // Si encontramos un reporte, pre-cargamos el formulario del encabezado
     if ($ultimoReporte) {
+        $this->maquina          = $ultimoReporte->maquina;
         $this->proveedor        = $ultimoReporte->proveedor;
         $this->articulo         = $ultimoReporte->articulo;
         $this->color_nombre     = $ultimoReporte->color_nombre;
@@ -42,6 +44,7 @@ state([
     'materialesOptions' => [],
     'ordenesCompraOptions' => [],
     'numerosRecepcionOptions' => [],
+    'maquinasOptions' => [],
 ]);
 
 // Función para realizar la búsqueda inteligente
@@ -127,11 +130,13 @@ $resetSearchOptions = function() {
     $this->materialesOptions = [];
     $this->ordenesCompraOptions = [];
     $this->numerosRecepcionOptions = [];
+    $this->maquinasOptions = [];
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
 state([
+    'maquina' => '',
     'proveedor' => '',
     'articulo' => '',
     'color_nombre' => '',
@@ -171,6 +176,7 @@ with(fn () => [
 // 5. Reglas de validación basadas en tu esquema SQL
 rules([
     // Reglas para el Encabezado
+    'maquina' => 'required|string|max:255',
     'proveedor' => 'required|string|max:255',
     'articulo' => 'required|string|max:255',
     'color_nombre' => 'required|string|max:255',
@@ -178,7 +184,7 @@ rules([
     'material' => 'required|string|max:255',
     'orden_compra' => 'required|string|max:255',
     'numero_recepcion' => 'required|string|max:255',
-    
+
     // Reglas para el Detalle
     'numero_piezas' => 'required|integer|min:1',
     'numero_lote' => 'required|string|max:255',
@@ -216,6 +222,7 @@ $save = function () {
             // --- PASO 1: Crear el reporte de inspección (la cabecera) ---
             $reporte = InspeccionReporte::create([
                 'user_id' => Auth::id(),
+                'maquina' => $validatedData['maquina'],
                 'proveedor' => $validatedData['proveedor'],
                 'articulo' => $validatedData['articulo'],
                 'color_nombre' => $validatedData['color_nombre'],
@@ -317,6 +324,23 @@ $save = function () {
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">1. Encabezado
                                 </h3>
                                 <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+
+                                    {{-- Máquina --}}
+                                    <div class="sm:col-span-2">
+                                        <label for="maquina"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máquina</label>
+                                        <select wire:model="maquina" id="maquina"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            @forelse(CatalogoMaquina::all() as $maquinaOption)
+                                            <option value="{{ $maquinaOption->nombre }}">{{ $maquinaOption->nombre }}
+                                            </option>
+                                            @empty
+                                            <option value="">-- No hay máquinas disponibles --</option>
+                                            @endforelse
+                                        </select>
+                                        @error('maquina') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
+                                    </div>
 
                                     {{-- Artículo, Proveedor, Color --}}
                                     <div class="sm:col-span-2">

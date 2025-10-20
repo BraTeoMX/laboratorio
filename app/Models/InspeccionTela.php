@@ -62,6 +62,7 @@ class InspeccionTela extends Model
         ,'lote'
         ,'talla'
         ,'color'
+        ,'lote_intimark'
         ,'fecha_creacion'
         // Agrega aquí todas las columnas de tu tabla 'inspeccion_tela' que quieras poder modificar
     ];
