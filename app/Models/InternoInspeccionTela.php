@@ -43,6 +43,7 @@ class InternoInspeccionTela extends Model
         'lote',
         'talla',
         'color',
+        'articulo',
         'lote_intimark',
         'fecha_creacion',
     ];

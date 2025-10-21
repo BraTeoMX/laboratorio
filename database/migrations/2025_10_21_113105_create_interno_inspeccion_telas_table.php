@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('proveedor')->nullable();
             $table->string('estilo')->nullable();
             $table->string('estilo_externo')->nullable();
+            $table->string('articulo')->nullable();
             $table->string('numero_linea')->nullable();
             $table->decimal('cantidad_rec', 10, 2)->nullable();
             $table->string('nombre_producto')->nullable();

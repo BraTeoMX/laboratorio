@@ -77,9 +77,10 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                     foreach ($telasInfo as $tela) {
                         $data = $tela->toArray();
                         $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
+                        $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color); // Unificar estilo.color en articulo
                         InternoInspeccionTela::updateOrCreate(
                             ['lote_intimark' => $tela->lote_intimark], // Condición de búsqueda
-                            $data // Datos a actualizar o crear con ancho_contratado
+                            $data // Datos a actualizar o crear con ancho_contratado y articulo
                         );
                     }
                 }
@@ -93,6 +94,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                 foreach ($telasInfo as $tela) {
                     $data = $tela->toArray();
                     $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
+                    $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color); // Unificar estilo.color en articulo
                     InternoInspeccionTela::updateOrCreate(
                         ['lote_intimark' => $tela->lote_intimark],
                         $data
@@ -105,7 +107,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
         if ($telasInfo->isNotEmpty()) {
             // >>> NUEVO: Extraer opciones únicas de la colección <<<
             $this->proveedoresOptions = $telasInfo->pluck('proveedor')->unique()->values()->all();
-            $this->articulosOptions = $telasInfo->map(fn($item) => $item->estilo . '.' . $item->color)->unique()->values()->all();
+            $this->articulosOptions = $telasInfo->pluck('articulo')->unique()->values()->all(); // Usar articulo unificado
             $this->colorNombresOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
             $this->materialesOptions = $telasInfo->pluck('estilo_externo')->unique()->values()->all();
             $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
@@ -121,7 +123,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
 
             // 9. Poblar el formulario con los datos del primer registro encontrado
             $this->proveedor = $primeraTela->proveedor;
-            $this->articulo = $primeraTela->estilo . '.' . $primeraTela->color;
+            $this->articulo = $primeraTela->articulo; // Usar articulo unificado
             $this->color_nombre = $primeraTela->nombre_producto;
             $this->material = $primeraTela->estilo_externo;
             $this->orden_compra = $primeraTela->orden_compra;
@@ -192,7 +194,7 @@ $updatedLoteIntimark = function () {
         if ($record) {
             // Preseleccionar los valores relacionados como sugerencia (usuario puede cambiar manualmente)
             $this->proveedor = $record['proveedor'];
-            $this->articulo = $record['estilo'] . '.' . $record['color'];
+            $this->articulo = $record['articulo']; // Usar articulo unificado
             $this->color_nombre = $record['nombre_producto'];
             $this->material = $record['estilo_externo'];
             $this->orden_compra = $record['orden_compra'];
@@ -209,6 +211,14 @@ $extraerAncho = function($nombreProductoExterno) {
         return (int) $matches[1];
     }
     return 0; // Valor por defecto si no se encuentra
+};
+
+// Función para unificar estilo y color en articulo
+$unificarArticulo = function($estilo, $color) {
+    if ($estilo && $color) {
+        return $estilo . '.' . $color;
+    }
+    return $estilo ?: $color ?: ''; // Retorna estilo o color si uno falta, o vacío si ambos faltan
 };
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
