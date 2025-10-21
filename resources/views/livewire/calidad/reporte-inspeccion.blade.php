@@ -46,6 +46,7 @@ state([
     'numerosRecepcionOptions' => [],
     'maquinasOptions' => [],
     'anchoContratadoOptions' => [],
+    'loteIntimarkOptions' => [],
 ]);
 
 // Función para realizar la búsqueda inteligente
@@ -78,6 +79,7 @@ $buscarInformacionTela = function () {
             $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
             $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
             $this->anchoContratadoOptions = $telasInfo->map(fn($item) => $item->pulgada_obtenida)->filter()->unique()->values()->all();
+            $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
 
             // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
             $primeraTela = $telasInfo->first();
@@ -91,6 +93,8 @@ $buscarInformacionTela = function () {
             $this->numero_recepcion = $primeraTela->numero_diario;
             // Preseleccionar el primer valor de ancho_contratado si hay opciones, sino '0'
             $this->ancho_contratado = !empty($this->anchoContratadoOptions) ? $this->anchoContratadoOptions[0] : 0;
+            // Preseleccionar el primer valor de lote_intimark si hay opciones
+            $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : '';
 
             // Notificación de éxito
             $this->dispatch('swal:toast', [
@@ -135,12 +139,14 @@ $resetSearchOptions = function() {
     $this->numerosRecepcionOptions = [];
     $this->maquinasOptions = [];
     $this->anchoContratadoOptions = [];
+    $this->loteIntimarkOptions = [];
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
 state([
     'maquina' => '',
+    'lote_intimark' => '',
     'proveedor' => '',
     'articulo' => '',
     'color_nombre' => '',
@@ -181,6 +187,7 @@ with(fn () => [
 rules([
     // Reglas para el Encabezado
     'maquina' => 'required|string|max:255',
+    'lote_intimark' => 'required|string|max:255',
     'proveedor' => 'required|string|max:255',
     'articulo' => 'required|string|max:255',
     'color_nombre' => 'required|string|max:255',
@@ -227,6 +234,7 @@ $save = function () {
             $reporte = InspeccionReporte::create([
                 'user_id' => Auth::id(),
                 'maquina' => $validatedData['maquina'],
+                'lote_intimark' => $validatedData['lote_intimark'],
                 'proveedor' => $validatedData['proveedor'],
                 'articulo' => $validatedData['articulo'],
                 'color_nombre' => $validatedData['color_nombre'],
@@ -344,6 +352,24 @@ $save = function () {
                                             @endforelse
                                         </select>
                                         @error('maquina') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Lote Intimark --}}
+                                    <div class="sm:col-span-2">
+                                        <label for="lote_intimark"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lote
+                                            Intimark</label>
+                                        <select wire:model="lote_intimark" id="lote_intimark"
+                                            @disabled(empty($loteIntimarkOptions))
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                            @forelse($loteIntimarkOptions as $option)
+                                            <option value="{{ $option }}">{{ $option }}</option>
+                                            @empty
+                                            <option value="">-- Busque para cargar opciones --</option>
+                                            @endforelse
+                                        </select>
+                                        @error('lote_intimark') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
 
