@@ -45,6 +45,7 @@ state([
     'ordenesCompraOptions' => [],
     'numerosRecepcionOptions' => [],
     'maquinasOptions' => [],
+    'anchoContratadoOptions' => [],
 ]);
 
 // Función para realizar la búsqueda inteligente
@@ -76,6 +77,7 @@ $buscarInformacionTela = function () {
             $this->materialesOptions = $telasInfo->pluck('estilo_externo')->unique()->values()->all();
             $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
             $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
+            $this->anchoContratadoOptions = $telasInfo->map(fn($item) => $item->pulgada_obtenida)->filter()->unique()->values()->all();
 
             // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
             $primeraTela = $telasInfo->first();
@@ -87,7 +89,8 @@ $buscarInformacionTela = function () {
             $this->material = $primeraTela->estilo_externo;
             $this->orden_compra = $primeraTela->orden_compra;
             $this->numero_recepcion = $primeraTela->numero_diario;
-            // El campo 'ancho_contratado' se deja para que el usuario lo llene manualmente si es necesario.
+            // Preseleccionar el primer valor de ancho_contratado si hay opciones, sino '0'
+            $this->ancho_contratado = !empty($this->anchoContratadoOptions) ? $this->anchoContratadoOptions[0] : 0;
 
             // Notificación de éxito
             $this->dispatch('swal:toast', [
@@ -131,6 +134,7 @@ $resetSearchOptions = function() {
     $this->ordenesCompraOptions = [];
     $this->numerosRecepcionOptions = [];
     $this->maquinasOptions = [];
+    $this->anchoContratadoOptions = [];
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
@@ -400,11 +404,17 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
-                                            Contratado (Yd)</label>
-                                        {{-- SIN CAMBIOS: Este campo sigue siendo editable --}}
-                                        <input type="number" step="0.01"
-                                            wire:model.live.debounce.300ms="ancho_contratado" id="ancho_contratado"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            Contratado (Pulgadas)</label>
+                                        {{-- MODIFICADO: Cambiado a select con opciones dinámicas --}}
+                                        <select wire:model="ancho_contratado" id="ancho_contratado"
+                                            @disabled(empty($anchoContratadoOptions))
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                            @forelse($anchoContratadoOptions as $option)
+                                            <option value="{{ $option }}">{{ $option }}</option>
+                                            @empty
+                                            <option value="0">-- No hay opciones disponibles --</option>
+                                            @endforelse
+                                        </select>
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>

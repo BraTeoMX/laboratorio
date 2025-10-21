@@ -66,4 +66,22 @@ class InspeccionTela extends Model
         ,'fecha_creacion'
         // Agrega aquí todas las columnas de tu tabla 'inspeccion_tela' que quieras poder modificar
     ];
+
+    /**
+     * Accesor para obtener el valor en pulgadas desde nombre_producto_externo.
+     * Busca un patrón de número seguido de comillas (ej. "72"").
+     *
+     * @return int|null
+     */
+    public function getPulgadaObtenidaAttribute()
+    {
+        $string = $this->nombre_producto_externo;
+
+        // Usa una expresión regular para encontrar el número antes de las comillas
+        if (preg_match('/(\d+)"/', $string, $matches)) {
+            return (int) $matches[1]; // Retorna el número como entero
+        }
+
+        return null; // Retorna null si no se encuentra el patrón
+    }
 }
