@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log; 
 use App\Models\InspeccionTela;
+use App\Models\InternoInspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
 use App\Models\CatalogoDefecto;
@@ -51,7 +52,7 @@ state([
 ]);
 
 // Función para realizar la búsqueda inteligente
-$buscarInformacionTela = function () {
+$buscarInformacionTela = function ($forceDirectQuery = false) {
     // 1. Validar que el término de búsqueda no esté vacío
     $this->validate(['searchTerm' => 'required|string|min:3']);
 
@@ -61,16 +62,42 @@ $buscarInformacionTela = function () {
         $columna = $esBusquedaPorRecepcion ? 'numero_diario' : 'orden_compra';
         $valor = $this->searchTerm;
 
-        // 3. Crear clave de caché
-        $cacheKey = 'inspeccion_tela_search_collection_' . md5($valor);
+        $telasInfo = null;
 
-        // 4. Usar Cache::remember para obtener la colección de datos.
-        // >>> MODIFICADO: Se cambia ->first() por ->get() para obtener una colección <<<
-        $telasInfo = Cache::remember($cacheKey, 18000, function () use ($columna, $valor) {
-            return InspeccionTela::where($columna, $valor)->get();
-        });
+        if (!$forceDirectQuery) {
+            // 3. Primero intentar buscar en la tabla local InternoInspeccionTela
+            $telasInfo = InternoInspeccionTela::where($columna, $valor)->get();
 
-        // 5. Si la colección NO está vacía, procesar los datos
+            if ($telasInfo->isEmpty()) {
+                // 4. Si no hay resultados en local, consultar InspeccionTela y almacenar
+                $telasInfo = InspeccionTela::where($columna, $valor)->get();
+
+                if ($telasInfo->isNotEmpty()) {
+                    // 5. Almacenar los resultados en la tabla local
+                    foreach ($telasInfo as $tela) {
+                        InternoInspeccionTela::updateOrCreate(
+                            ['lote_intimark' => $tela->lote_intimark], // Condición de búsqueda
+                            $tela->toArray() // Datos a actualizar o crear
+                        );
+                    }
+                }
+            }
+        } else {
+            // 6. Consulta directa forzada a InspeccionTela (sin usar caché local)
+            $telasInfo = InspeccionTela::where($columna, $valor)->get();
+
+            if ($telasInfo->isNotEmpty()) {
+                // 7. Actualizar la tabla local con los datos frescos
+                foreach ($telasInfo as $tela) {
+                    InternoInspeccionTela::updateOrCreate(
+                        ['lote_intimark' => $tela->lote_intimark],
+                        $tela->toArray()
+                    );
+                }
+            }
+        }
+
+        // 8. Si la colección NO está vacía, procesar los datos
         if ($telasInfo->isNotEmpty()) {
             // >>> NUEVO: Extraer opciones únicas de la colección <<<
             $this->proveedoresOptions = $telasInfo->pluck('proveedor')->unique()->values()->all();
@@ -88,7 +115,7 @@ $buscarInformacionTela = function () {
             // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
             $primeraTela = $telasInfo->first();
 
-            // 6. Poblar el formulario con los datos del primer registro encontrado
+            // 9. Poblar el formulario con los datos del primer registro encontrado
             $this->proveedor = $primeraTela->proveedor;
             $this->articulo = $primeraTela->estilo . '.' . $primeraTela->color;
             $this->color_nombre = $primeraTela->nombre_producto;
@@ -101,13 +128,13 @@ $buscarInformacionTela = function () {
             $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : '';
 
             // Notificación de éxito
+            $titulo = $forceDirectQuery ? 'Consulta directa completada. Información actualizada.' : 'Información encontrada. Seleccione las opciones correctas.';
             $this->dispatch('swal:toast', [
                 'icon' => 'success',
-                'title' => 'Información encontrada. Seleccione las opciones correctas.'
+                'title' => $titulo
             ]);
 
         } else {
-            Log::error($e);
             // Si no se encuentra, limpiar y notificar al usuario
             $this->resetSearchOptions(); // Limpiar formulario y opciones
             $this->dispatch('swal:toast', [
@@ -118,7 +145,7 @@ $buscarInformacionTela = function () {
     } catch (\Exception $e) {
         // Manejo de errores
         Log::error($e);
-        $this->resetSearchOptions(); 
+        $this->resetSearchOptions();
         $this->dispatch('swal:toast', [
             'icon' => 'error',
             'title' => 'Error al buscar la información: ' . $e->getMessage()
@@ -145,6 +172,11 @@ $resetSearchOptions = function() {
     $this->anchoContratadoOptions = [];
     $this->loteIntimarkOptions = [];
     $this->telasInfo = []; // Limpiar también la colección completa
+};
+
+// >>> NUEVO: Función para forzar consulta directa a InspeccionTela <<<
+$forzarConsultaDirecta = function () {
+    $this->buscarInformacionTela(true); // Pasar true para forzar consulta directa
 };
 
 // >>> NUEVO: Función para preseleccionar datos relacionados al cambiar lote_intimark <<<
@@ -349,6 +381,20 @@ $save = function () {
                                             </path>
                                         </svg>
                                         <span>Buscar</span>
+                                    </button>
+                                    <button type="button" wire:click="forzarConsultaDirecta"
+                                        wire:loading.attr="disabled"
+                                        class="inline-flex items-center justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+                                        <svg wire:loading wire:target="forzarConsultaDirecta"
+                                            class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                        <span>Forzar Consulta Directa</span>
                                     </button>
                                 </div>
                             </div>
