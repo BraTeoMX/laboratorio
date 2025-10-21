@@ -47,6 +47,7 @@ state([
     'maquinasOptions' => [],
     'anchoContratadoOptions' => [],
     'loteIntimarkOptions' => [],
+    'telasInfo' => [], // Almacena la colección completa para preselección
 ]);
 
 // Función para realizar la búsqueda inteligente
@@ -80,6 +81,9 @@ $buscarInformacionTela = function () {
             $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
             $this->anchoContratadoOptions = $telasInfo->map(fn($item) => $item->pulgada_obtenida)->filter()->unique()->values()->all();
             $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
+
+            // >>> NUEVO: Almacenar la colección completa para preselección <<<
+            $this->telasInfo = $telasInfo->toArray();
 
             // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
             $primeraTela = $telasInfo->first();
@@ -140,6 +144,26 @@ $resetSearchOptions = function() {
     $this->maquinasOptions = [];
     $this->anchoContratadoOptions = [];
     $this->loteIntimarkOptions = [];
+    $this->telasInfo = []; // Limpiar también la colección completa
+};
+
+// >>> NUEVO: Función para preseleccionar datos relacionados al cambiar lote_intimark <<<
+$updatedLoteIntimark = function () {
+    if ($this->lote_intimark && !empty($this->telasInfo)) {
+        // Buscar el primer registro que coincida con el lote_intimark seleccionado
+        $record = collect($this->telasInfo)->firstWhere('lote_intimark', $this->lote_intimark);
+
+        if ($record) {
+            // Preseleccionar los valores relacionados como sugerencia (usuario puede cambiar manualmente)
+            $this->proveedor = $record['proveedor'];
+            $this->articulo = $record['estilo'] . '.' . $record['color'];
+            $this->color_nombre = $record['nombre_producto'];
+            $this->material = $record['estilo_externo'];
+            $this->orden_compra = $record['orden_compra'];
+            $this->numero_recepcion = $record['numero_diario'];
+            $this->ancho_contratado = $record['pulgada_obtenida'];
+        }
+    }
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
