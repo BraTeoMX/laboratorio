@@ -75,9 +75,11 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                 if ($telasInfo->isNotEmpty()) {
                     // 5. Almacenar los resultados en la tabla local
                     foreach ($telasInfo as $tela) {
+                        $data = $tela->toArray();
+                        $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
                         InternoInspeccionTela::updateOrCreate(
                             ['lote_intimark' => $tela->lote_intimark], // Condición de búsqueda
-                            $tela->toArray() // Datos a actualizar o crear
+                            $data // Datos a actualizar o crear con ancho_contratado
                         );
                     }
                 }
@@ -89,9 +91,11 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
             if ($telasInfo->isNotEmpty()) {
                 // 7. Actualizar la tabla local con los datos frescos
                 foreach ($telasInfo as $tela) {
+                    $data = $tela->toArray();
+                    $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
                     InternoInspeccionTela::updateOrCreate(
                         ['lote_intimark' => $tela->lote_intimark],
-                        $tela->toArray()
+                        $data
                     );
                 }
             }
@@ -106,7 +110,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
             $this->materialesOptions = $telasInfo->pluck('estilo_externo')->unique()->values()->all();
             $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
             $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
-            $this->anchoContratadoOptions = $telasInfo->map(fn($item) => $item->pulgada_obtenida)->filter()->unique()->values()->all();
+            $this->anchoContratadoOptions = $telasInfo->pluck('ancho_contratado')->filter()->unique()->values()->all(); // Usar ancho_contratado almacenado
             $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
 
             // >>> NUEVO: Almacenar la colección completa para preselección <<<
@@ -193,11 +197,19 @@ $updatedLoteIntimark = function () {
             $this->material = $record['estilo_externo'];
             $this->orden_compra = $record['orden_compra'];
             $this->numero_recepcion = $record['numero_diario'];
-            $this->ancho_contratado = $record['pulgada_obtenida'];
+            $this->ancho_contratado = $record['ancho_contratado']; // Usar el valor almacenado
         }
     }
 };
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
+
+// Función para extraer el ancho contratado desde nombre_producto_externo
+$extraerAncho = function($nombreProductoExterno) {
+    if (preg_match('/(\d+)"/', $nombreProductoExterno, $matches)) {
+        return (int) $matches[1];
+    }
+    return 0; // Valor por defecto si no se encuentra
+};
 
 // 1. Estado para el formulario de InspeccionReporte (Encabezado)
 state([

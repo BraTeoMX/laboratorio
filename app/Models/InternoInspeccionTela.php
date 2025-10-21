@@ -36,6 +36,7 @@ class InternoInspeccionTela extends Model
         'estilo_externo',
         'numero_linea',
         'cantidad_rec',
+        'ancho_contratado',
         'nombre_producto',
         'cantidad_ordenada',
         'nombre_producto_externo',
@@ -48,12 +49,19 @@ class InternoInspeccionTela extends Model
 
     /**
      * Accesor para obtener el valor en pulgadas desde nombre_producto_externo.
+     * Ahora usa el valor almacenado en ancho_contratado si existe, sino calcula.
      * Busca un patrón de número seguido de comillas (ej. "72"").
      *
      * @return int|null
      */
     public function getPulgadaObtenidaAttribute()
     {
+        // Si ancho_contratado está establecido y es mayor a 0, úsalo
+        if ($this->ancho_contratado && $this->ancho_contratado > 0) {
+            return $this->ancho_contratado;
+        }
+
+        // Fallback: calcular desde nombre_producto_externo
         $string = $this->nombre_producto_externo;
 
         // Usa una expresión regular para encontrar el número antes de las comillas
