@@ -438,7 +438,7 @@ $save = function () {
                                             Intimark</label>
                                         <select wire:model.live="lote_intimark" wire:change="$this->updatedLoteIntimark"
                                             id="lote_intimark" @disabled(empty($loteIntimarkOptions))
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-500 disabled:cursor-not-allowed">
                                             @forelse($loteIntimarkOptions as $option)
                                             <option value="{{ $option }}">{{ $option }}</option>
                                             @empty
@@ -454,7 +454,7 @@ $save = function () {
                                         <label for="articulo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Artículo</label>
                                         <input type="text" wire:model="articulo" id="articulo" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -463,7 +463,7 @@ $save = function () {
                                         <label for="proveedor"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Proveedor</label>
                                         <input type="text" wire:model="proveedor" id="proveedor" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -473,7 +473,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre
                                             Color</label>
                                         <input type="text" wire:model="color_nombre" id="color_nombre" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('color_nombre') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
@@ -485,7 +485,7 @@ $save = function () {
                                             Contratado (Pulgadas)</label>
                                         <input type="number" step="0.01" wire:model="ancho_contratado"
                                             id="ancho_contratado" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
@@ -494,7 +494,7 @@ $save = function () {
                                         <label for="material"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Material</label>
                                         <input type="text" wire:model="material" id="material" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -504,7 +504,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Orden
                                             Compra</label>
                                         <input type="text" wire:model="orden_compra" id="orden_compra" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('orden_compra') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
@@ -514,7 +514,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">No.
                                             Recepción</label>
                                         <input type="text" wire:model="numero_recepcion" id="numero_recepcion" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-800 dark:border-gray-700 bg-gray-100 sm:text-sm">
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
