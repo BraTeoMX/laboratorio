@@ -105,33 +105,16 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
 
         // 8. Si la colección NO está vacía, procesar los datos
         if ($telasInfo->isNotEmpty()) {
-            // >>> NUEVO: Extraer opciones únicas de la colección <<<
-            $this->proveedoresOptions = $telasInfo->pluck('proveedor')->unique()->values()->all();
-            $this->articulosOptions = $telasInfo->pluck('articulo')->unique()->values()->all(); // Usar articulo unificado
-            $this->colorNombresOptions = $telasInfo->pluck('nombre_producto')->unique()->values()->all();
-            $this->materialesOptions = $telasInfo->pluck('estilo_externo')->unique()->values()->all();
-            $this->ordenesCompraOptions = $telasInfo->pluck('orden_compra')->unique()->values()->all();
-            $this->numerosRecepcionOptions = $telasInfo->pluck('numero_diario')->unique()->values()->all();
-            $this->anchoContratadoOptions = $telasInfo->pluck('ancho_contratado')->filter()->unique()->values()->all(); // Usar ancho_contratado almacenado
+            // >>> MODIFICADO: Solo extraer opciones únicas para lote_intimark <<<
             $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
 
             // >>> NUEVO: Almacenar la colección completa para preselección <<<
             $this->telasInfo = $telasInfo->toArray();
 
-            // >>> NUEVO: Obtener el primer registro para pre-seleccionar el formulario <<<
-            $primeraTela = $telasInfo->first();
-
-            // 9. Poblar el formulario con los datos del primer registro encontrado
-            $this->proveedor = $primeraTela->proveedor;
-            $this->articulo = $primeraTela->articulo; // Usar articulo unificado
-            $this->color_nombre = $primeraTela->nombre_producto;
-            $this->material = $primeraTela->estilo_externo;
-            $this->orden_compra = $primeraTela->orden_compra;
-            $this->numero_recepcion = $primeraTela->numero_diario;
-            // Preseleccionar el primer valor de ancho_contratado si hay opciones, sino '0'
-            $this->ancho_contratado = !empty($this->anchoContratadoOptions) ? $this->anchoContratadoOptions[0] : 0;
-            // Preseleccionar el primer valor de lote_intimark si hay opciones
+            // >>> MODIFICADO: Preseleccionar el primer lote y actualizar campos readonly <<<
             $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : '';
+            // Llamar a updatedLoteIntimark para poblar los demás campos
+            $this->updatedLoteIntimark();
 
             // Notificación de éxito
             $titulo = $forceDirectQuery ? 'Consulta directa completada. Información actualizada.' : 'Información encontrada. Seleccione las opciones correctas.';
@@ -168,16 +151,17 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
 };*/
 // AHORA (Usa esta en su lugar)
 $resetSearchOptions = function() {
-    $this->proveedoresOptions = [];
-    $this->articulosOptions = [];
-    $this->colorNombresOptions = [];
-    $this->materialesOptions = [];
-    $this->ordenesCompraOptions = [];
-    $this->numerosRecepcionOptions = [];
-    $this->maquinasOptions = [];
-    $this->anchoContratadoOptions = [];
     $this->loteIntimarkOptions = [];
     $this->telasInfo = []; // Limpiar también la colección completa
+    // Limpiar campos readonly
+    $this->proveedor = '';
+    $this->articulo = '';
+    $this->color_nombre = '';
+    $this->ancho_contratado = '';
+    $this->material = '';
+    $this->orden_compra = '';
+    $this->numero_recepcion = '';
+    $this->lote_intimark = '';
 };
 
 // >>> NUEVO: Función para forzar consulta directa a InspeccionTela <<<
@@ -469,53 +453,29 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="articulo"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Artículo</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="articulo" id="articulo"
-                                                @disabled(empty($articulosOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($articulosOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque para cargar opciones --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                            @enderror
+                                        <input type="text" wire:model="articulo" id="articulo" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('articulo') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
                                     </div>
 
                                     <div class="sm:col-span-2">
                                         <label for="proveedor"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Proveedor</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="proveedor" id="proveedor"
-                                                @disabled(empty($proveedoresOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($proveedoresOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque para cargar opciones --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                            @enderror
+                                        <input type="text" wire:model="proveedor" id="proveedor" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('proveedor') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
                                     </div>
 
                                     <div class="sm:col-span-2">
                                         <label for="color_nombre"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre
                                             Color</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="color_nombre" id="color_nombre"
-                                                @disabled(empty($colorNombresOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($colorNombresOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque para cargar opciones --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('color_nombre') <span class="text-red-500 text-xs">{{ $message
-                                                }}</span> @enderror
+                                        <input type="text" wire:model="color_nombre" id="color_nombre" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('color_nombre') <span class="text-red-500 text-xs">{{ $message
+                                            }}</span> @enderror
                                     </div>
 
                                     {{-- Ancho, Material, OC, Recepción --}}
@@ -523,16 +483,9 @@ $save = function () {
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Pulgadas)</label>
-                                        {{-- MODIFICADO: Cambiado a select con opciones dinámicas --}}
-                                        <select wire:model="ancho_contratado" id="ancho_contratado"
-                                            @disabled(empty($anchoContratadoOptions))
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                            @forelse($anchoContratadoOptions as $option)
-                                            <option value="{{ $option }}">{{ $option }}</option>
-                                            @empty
-                                            <option value="0">-- No hay opciones disponibles --</option>
-                                            @endforelse
-                                        </select>
+                                        <input type="number" step="0.01" wire:model="ancho_contratado"
+                                            id="ancho_contratado" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
@@ -540,54 +493,30 @@ $save = function () {
                                     <div class="sm:col-span-2">
                                         <label for="material"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Material</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="material" id="material"
-                                                @disabled(empty($materialesOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($materialesOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque para cargar opciones --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
-                                            @enderror
+                                        <input type="text" wire:model="material" id="material" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('material') <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
                                     </div>
 
                                     <div class="sm:col-span-1">
                                         <label for="orden_compra"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Orden
                                             Compra</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="orden_compra" id="orden_compra"
-                                                @disabled(empty($ordenesCompraOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($ordenesCompraOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('orden_compra') <span class="text-red-500 text-xs">{{ $message
-                                                }}</span> @enderror
+                                        <input type="text" wire:model="orden_compra" id="orden_compra" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('orden_compra') <span class="text-red-500 text-xs">{{ $message
+                                            }}</span> @enderror
                                     </div>
 
                                     <div class="sm:col-span-1">
                                         <label for="numero_recepcion"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">No.
                                             Recepción</label>
-                                        {{-- MODIFICADO: de <input readonly> a <select> --}}
-                                            <select wire:model="numero_recepcion" id="numero_recepcion"
-                                                @disabled(empty($numerosRecepcionOptions))
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-700 disabled:cursor-not-allowed">
-                                                @forelse($numerosRecepcionOptions as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                                @empty
-                                                <option value="">-- Busque --</option>
-                                                @endforelse
-                                            </select>
-                                            @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
-                                                }}</span> @enderror
+                                        <input type="text" wire:model="numero_recepcion" id="numero_recepcion" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 sm:text-sm">
+                                        @error('numero_recepcion') <span class="text-red-500 text-xs">{{ $message
+                                            }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
