@@ -27,6 +27,7 @@ mount(function () {
         $this->articulo         = $ultimoReporte->articulo;
         $this->color_nombre     = $ultimoReporte->color_nombre;
         $this->ancho_contratado = $ultimoReporte->ancho_contratado;
+        $this->ancho_contratado_cm = $this->convertToCm($ultimoReporte->ancho_contratado);
         $this->material         = $ultimoReporte->material;
         $this->orden_compra     = $ultimoReporte->orden_compra;
         $this->numero_recepcion = $ultimoReporte->numero_recepcion;
@@ -158,6 +159,7 @@ $resetSearchOptions = function() {
     $this->articulo = '';
     $this->color_nombre = '';
     $this->ancho_contratado = '';
+    $this->ancho_contratado_cm = '';
     $this->material = '';
     $this->orden_compra = '';
     $this->numero_recepcion = '';
@@ -184,6 +186,7 @@ $updatedLoteIntimark = function () {
             $this->orden_compra = $record['orden_compra'];
             $this->numero_recepcion = $record['numero_diario'];
             $this->ancho_contratado = $record['ancho_contratado']; // Usar el valor almacenado
+            $this->ancho_contratado_cm = $this->convertToCm($record['ancho_contratado']);
         }
     }
 };
@@ -213,10 +216,25 @@ state([
     'articulo' => '',
     'color_nombre' => '',
     'ancho_contratado' => '',
+    'ancho_contratado_cm' => '',
     'material' => '',
     'orden_compra' => '',
     'numero_recepcion' => ''
 ]);
+
+// Function to convert inches to cm with rounding
+$convertToCm = function ($inches) {
+    if (is_numeric($inches)) {
+        $cm = $inches * 2.54;
+        $integer = floor($cm);
+        $decimal = $cm - $integer;
+        if ($decimal >= 0.50) {
+            $integer += 1;
+        }
+        return $integer;
+    }
+    return '';
+};
 
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
 state([
@@ -254,6 +272,7 @@ rules([
     'articulo' => 'required|string|max:255',
     'color_nombre' => 'required|string|max:255',
     'ancho_contratado' => 'required|numeric|min:0',
+    'ancho_contratado_cm' => 'required|integer|min:0',
     'material' => 'required|string|max:255',
     'orden_compra' => 'required|string|max:255',
     'numero_recepcion' => 'required|string|max:255',
@@ -301,6 +320,7 @@ $save = function () {
                 'articulo' => $validatedData['articulo'],
                 'color_nombre' => $validatedData['color_nombre'],
                 'ancho_contratado' => $validatedData['ancho_contratado'],
+                'ancho_contratado_cm' => $validatedData['ancho_contratado_cm'],
                 'material' => $validatedData['material'],
                 'orden_compra' => $validatedData['orden_compra'],
                 'numero_recepcion' => $validatedData['numero_recepcion'],
@@ -478,8 +498,8 @@ $save = function () {
                                             }}</span> @enderror
                                     </div>
 
-                                    {{-- Ancho, Material, OC, Recepción --}}
-                                    <div class="sm:col-span-2">
+                                    {{-- Ancho Contratado (Pulgadas) --}}
+                                    <div class="sm:col-span-1">
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Pulgadas)</label>
@@ -487,6 +507,18 @@ $save = function () {
                                             id="ancho_contratado" readonly
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
+                                            }}</span> @enderror
+                                    </div>
+
+                                    {{-- Ancho Contratado (Centímetros) --}}
+                                    <div class="sm:col-span-1">
+                                        <label for="ancho_contratado_cm"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
+                                            Contratado (Centímetros)</label>
+                                        <input type="number" step="1" wire:model="ancho_contratado_cm"
+                                            id="ancho_contratado_cm" readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
+                                        @error('ancho_contratado_cm') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
 
