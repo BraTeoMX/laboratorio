@@ -27,7 +27,6 @@ mount(function () {
         $this->articulo         = $ultimoReporte->articulo;
         $this->color_nombre     = $ultimoReporte->color_nombre;
         $this->ancho_contratado = $ultimoReporte->ancho_contratado;
-        $this->ancho_contratado_cm = $this->convertToCm($ultimoReporte->ancho_contratado);
         $this->material         = $ultimoReporte->material;
         $this->orden_compra     = $ultimoReporte->orden_compra;
         $this->numero_recepcion = $ultimoReporte->numero_recepcion;
@@ -50,6 +49,8 @@ state([
     'anchoContratadoOptions' => [],
     'loteIntimarkOptions' => [],
     'telasInfo' => [], // Almacena la colección completa para preselección
+    'original_ancho_contratado' => '',
+    'previous_lote' => '',
 ]);
 
 // Función para realizar la búsqueda inteligente
@@ -159,11 +160,12 @@ $resetSearchOptions = function() {
     $this->articulo = '';
     $this->color_nombre = '';
     $this->ancho_contratado = '';
-    $this->ancho_contratado_cm = '';
     $this->material = '';
     $this->orden_compra = '';
     $this->numero_recepcion = '';
     $this->lote_intimark = '';
+    $this->original_ancho_contratado = '';
+    $this->previous_lote = '';
 };
 
 // >>> NUEVO: Función para forzar consulta directa a InspeccionTela <<<
@@ -186,7 +188,8 @@ $updatedLoteIntimark = function () {
             $this->orden_compra = $record['orden_compra'];
             $this->numero_recepcion = $record['numero_diario'];
             $this->ancho_contratado = $this->extraerAncho($record['nombre_producto_externo']); // Calcular ancho_contratado
-            $this->ancho_contratado_cm = $this->convertToCm($this->ancho_contratado);
+            $this->original_ancho_contratado = $this->ancho_contratado; // Guardar el valor original
+            $this->previous_lote = $this->lote_intimark; // Guardar el lote actual
         }
     }
 };
@@ -216,7 +219,6 @@ state([
     'articulo' => '',
     'color_nombre' => '',
     'ancho_contratado' => '',
-    'ancho_contratado_cm' => '',
     'material' => '',
     'orden_compra' => '',
     'numero_recepcion' => ''
@@ -234,6 +236,29 @@ $convertToCm = function ($inches) {
         return $integer;
     }
     return '';
+};
+
+// Computed property for ancho_contratado_cm
+$ancho_contratado_cm = computed(function () {
+    return $this->convertToCm($this->ancho_contratado);
+});
+
+// Hook para manejar cambios en ancho_contratado
+$updatedAnchoContratado = function () {
+    // Si el usuario modificó el ancho_contratado cuando era 0, y ahora cambia de lote a uno con valor > 0,
+    // necesitamos actualizar el dato de origen en telasInfo
+    if ($this->previous_lote && $this->original_ancho_contratado == 0 && $this->ancho_contratado != $this->original_ancho_contratado) {
+        // Buscar el registro en telasInfo y actualizarlo
+        foreach ($this->telasInfo as &$record) {
+            if ($record['lote_intimark'] === $this->previous_lote) {
+                $record['ancho_contratado'] = $this->ancho_contratado;
+                break;
+            }
+        }
+        // Actualizar también en la base de datos local si existe
+        InternoInspeccionTela::where('lote_intimark', $this->previous_lote)
+            ->update(['ancho_contratado' => $this->ancho_contratado]);
+    }
 };
 
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
@@ -271,8 +296,7 @@ rules([
     'proveedor' => 'required|string|max:255',
     'articulo' => 'required|string|max:255',
     'color_nombre' => 'required|string|max:255',
-    'ancho_contratado' => 'required|numeric|min:0',
-    'ancho_contratado_cm' => 'required|integer|min:0',
+    'ancho_contratado' => 'required|integer|min:0',
     'material' => 'required|string|max:255',
     'orden_compra' => 'required|string|max:255',
     'numero_recepcion' => 'required|string|max:255',
@@ -320,7 +344,7 @@ $save = function () {
                 'articulo' => $validatedData['articulo'],
                 'color_nombre' => $validatedData['color_nombre'],
                 'ancho_contratado' => $validatedData['ancho_contratado'],
-                'ancho_contratado_cm' => $validatedData['ancho_contratado_cm'],
+                'ancho_contratado_cm' => $this->ancho_contratado_cm,
                 'material' => $validatedData['material'],
                 'orden_compra' => $validatedData['orden_compra'],
                 'numero_recepcion' => $validatedData['numero_recepcion'],
@@ -503,9 +527,10 @@ $save = function () {
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Pulgadas)</label>
-                                        <input type="number" step="0.01" wire:model="ancho_contratado"
-                                            id="ancho_contratado" readonly
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
+                                        <input type="number" step="1" wire:model.live="ancho_contratado"
+                                            id="ancho_contratado" @if($ancho_contratado> 0) readonly @endif
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700
+                                        dark:border-gray-700 @if($ancho_contratado > 0) bg-gray-200 @endif sm:text-sm">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
@@ -515,11 +540,9 @@ $save = function () {
                                         <label for="ancho_contratado_cm"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Centímetros)</label>
-                                        <input type="number" step="1" wire:model="ancho_contratado_cm"
+                                        <input type="number" step="1" value="{{ $this->ancho_contratado_cm }}"
                                             id="ancho_contratado_cm" readonly
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-700 bg-gray-200 sm:text-sm">
-                                        @error('ancho_contratado_cm') <span class="text-red-500 text-xs">{{ $message
-                                            }}</span> @enderror
                                     </div>
 
                                     <div class="sm:col-span-2">
