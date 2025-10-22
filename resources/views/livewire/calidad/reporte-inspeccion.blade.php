@@ -180,13 +180,13 @@ $updatedLoteIntimark = function () {
         if ($record) {
             // Actualizar automáticamente los valores en los inputs readonly
             $this->proveedor = $record['proveedor'];
-            $this->articulo = $record['articulo']; // Usar articulo unificado
+            $this->articulo = $this->unificarArticulo($record['estilo'], $record['color']); // Calcular articulo unificado
             $this->color_nombre = $record['nombre_producto'];
             $this->material = $record['estilo_externo'];
             $this->orden_compra = $record['orden_compra'];
             $this->numero_recepcion = $record['numero_diario'];
-            $this->ancho_contratado = $record['ancho_contratado']; // Usar el valor almacenado
-            $this->ancho_contratado_cm = $this->convertToCm($record['ancho_contratado']);
+            $this->ancho_contratado = $this->extraerAncho($record['nombre_producto_externo']); // Calcular ancho_contratado
+            $this->ancho_contratado_cm = $this->convertToCm($this->ancho_contratado);
         }
     }
 };
