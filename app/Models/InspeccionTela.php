@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class InspeccionTela extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * La conexión de base de datos que debe ser utilizada por el modelo.
@@ -66,6 +68,26 @@ class InspeccionTela extends Model
         ,'fecha_creacion'
         // Agrega aquí todas las columnas de tu tabla 'inspeccion_tela' que quieras poder modificar
     ];
+
+    /**
+     * Configuración de Activity Log
+     * Define qué campos se deben auditar cuando cambian
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'orden_compra',
+                'proveedor',
+                'estilo',
+                'cantidad_rec',
+                'cantidad_ordenada',
+                'lote',
+                'fecha_creacion'
+            ])
+            ->logOnlyDirty() // Solo registra si el valor realmente cambió
+            ->dontSubmitEmptyLogs(); // No crear log si no hay cambios
+    }
 
     /**
      * Accesor para obtener el valor en pulgadas desde nombre_producto_externo.
