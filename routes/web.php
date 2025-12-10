@@ -52,6 +52,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Vista específica para gestores (role_id = 3)
     Route::view('vista-gestor', 'vistaGestor')->name('vistaGestor');
 
+    // Rutas de Inventario de Telas (Demo)
+    Route::prefix('telas')->name('telas.')->group(function () {
+        Route::view('/', 'telas.index')->name('index');
+        Route::get('/export/pdf', [App\Http\Controllers\TelasExportController::class, 'exportPDF'])->name('export.pdf');
+        Route::get('/export/excel', [App\Http\Controllers\TelasExportController::class, 'exportExcel'])->name('export.excel');
+    });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
