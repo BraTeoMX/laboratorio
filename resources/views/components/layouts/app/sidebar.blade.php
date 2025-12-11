@@ -95,24 +95,27 @@
                 <flux:menu.separator />
 
                 <div class="px-2 py-4">
-                    <flux:radio.group x-data variant="segmented" x-model="$flux.appearance"
-                        class="flex flex-col gap-2 w-full mb-4 items-start">
-                        <flux:radio class="self-start w-full justify-start text-left" value="light" icon="sun">
+                    <div class="flex flex-col gap-1 w-full mb-4 items-start" x-data>
+                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click="$flux.appearance = 'light'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'light' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Light') }}
-                        </flux:radio>
+                        </flux:button>
 
-                        <flux:radio class="self-start w-full justify-start text-left" value="dark" icon="moon">
+                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click="$flux.appearance = 'dark'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'dark' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Dark') }}
-                        </flux:radio>
+                        </flux:button>
 
-                        <flux:radio class="self-start w-full justify-start text-left" value="system"
-                            icon="computer-desktop">
+                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click="$flux.appearance = 'system'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'system' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Sistema') }}
-                        </flux:radio>
-                    </flux:radio.group>
+                        </flux:button>
+                    </div>
                 </div>
 
-                <flux:menu.separator />
                 <flux:menu.separator />
 
                 {{-- Logout Form --}}
@@ -153,6 +156,27 @@
                         </div>
                     </div>
                 </flux:menu.radio.group>
+                <div class="px-2 py-4">
+                    <div class="flex flex-col gap-1 w-full mb-4 items-start" x-data>
+                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click="$flux.appearance = 'light'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'light' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
+                            {{ __('Light') }}
+                        </flux:button>
+
+                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click="$flux.appearance = 'dark'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'dark' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
+                            {{ __('Dark') }}
+                        </flux:button>
+
+                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click="$flux.appearance = 'system'"
+                            variant="ghost"
+                            x-bind:class="$flux.appearance === 'system' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
+                            {{ __('Sistema') }}
+                        </flux:button>
+                    </div>
+                </div>
 
                 <flux:menu.separator />
 
