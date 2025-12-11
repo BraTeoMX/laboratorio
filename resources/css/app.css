@@ -6,6 +6,9 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+@source '../../vendor/power-components/livewire-powergrid/resources/views/**/*.php';
+@source '../../vendor/power-components/livewire-powergrid/src/Themes/Tailwind.php';
+@source '../../app/Livewire/**/*Table.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -62,6 +65,39 @@ select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* PowerGrid / Table Footer Dark Mode Fixes */
+.dark .power-grid-footer,
+.dark .power-grid-footer>div,
+.dark .power-grid-footer>div>div {
+    @apply !text-zinc-300 !bg-zinc-900 !border-zinc-700;
+    background-color: var(--color-zinc-900) !important;
+    color: var(--color-zinc-300) !important;
+    border-color: var(--color-zinc-700) !important;
+}
+
+.dark .power-grid-footer p,
+.dark .power-grid-footer span {
+    @apply !text-zinc-400;
+    color: var(--color-zinc-400) !important;
+}
+
+.dark select {
+    @apply bg-zinc-800 border-zinc-700 text-zinc-200;
+}
+
+.dark nav[role="navigation"] span,
+.dark nav[role="navigation"] a {
+    @apply border-zinc-700 text-zinc-300 bg-zinc-800;
+}
+
+.dark nav[role="navigation"] span[aria-current="page"] {
+    @apply bg-zinc-700 text-white border-zinc-600;
+}
+
+.dark nav[role="navigation"] a:hover {
+    @apply bg-zinc-700 text-white;
+}
+
+.dark table tbody tr:hover {
+    @apply bg-zinc-700/50;
+}
