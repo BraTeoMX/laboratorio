@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\AuditoriaMateriaPrima;
 use App\Models\AuditoriaMateriaPrimaDetalle;
 use App\Models\InspeccionTela;
+use App\Services\AuditoriaService;
 
 mount(function () {
     // Buscar el último reporte creado HOY por el USUARIO ACTUAL
@@ -49,44 +50,29 @@ $buscarInformacionMateriaPrima = function () {
     $this->validate(['searchTerm' => 'required|string|min:3']);
 
     try {
-        // Crear clave de caché
-        $cacheKey = 'auditoria_materia_prima_search_collection_' . md5($this->searchTerm);
+        $service = new AuditoriaService();
+        $result = $service->buscarInformacionMateriaPrima($this->searchTerm);
 
-        // Usar Cache::remember para obtener la colección de datos.
-        $materiasPrimas = Cache::remember($cacheKey, 18000, function () {
-            return InspeccionTela::where('orden_compra', $this->searchTerm)
-                ->orWhere('numero_diario', 'LIKE', '%' . $this->searchTerm . '%')
-                ->get();
-        });
+        if ($result['success']) {
+            $this->proveedoresOptions = $result['options']['proveedores'];
+            $this->articulosOptions = $result['options']['articulos'];
+            $this->materialesOptions = $result['options']['materiales'];
+            $this->coloresOptions = $result['options']['colores'];
 
-        // Si la colección NO está vacía, procesar los datos
-        if ($materiasPrimas->isNotEmpty()) {
-            // Extraer opciones únicas de la colección
-            $this->proveedoresOptions = $materiasPrimas->pluck('proveedor')->unique()->values()->all();
-            $this->articulosOptions = $materiasPrimas->map(fn($item) => $item->estilo . '.' . $item->color)->unique()->values()->all();
-            $this->materialesOptions = $materiasPrimas->pluck('estilo_externo')->unique()->values()->all();
-            $this->coloresOptions = $materiasPrimas->pluck('nombre_producto')->unique()->values()->all();
+            $this->proveedor = $result['preselect']['proveedor'];
+            $this->articulo = $result['preselect']['articulo'];
+            $this->material = $result['preselect']['material'];
+            $this->nombre_color = $result['preselect']['nombre_color'];
 
-            // Obtener el primer registro para pre-seleccionar el formulario
-            $primeraMateria = $materiasPrimas->first();
-
-            // Poblar el formulario con los datos del primer registro encontrado
-            $this->proveedor = $primeraMateria->proveedor;
-            $this->articulo = $primeraMateria->estilo . '.' . $primeraMateria->color;
-            $this->material = $primeraMateria->estilo_externo;
-            $this->nombre_color = $primeraMateria->nombre_producto;
-
-            // Notificación de éxito
             $this->dispatch('swal:toast', [
                 'icon' => 'success',
                 'title' => 'Información encontrada. Seleccione las opciones correctas.'
             ]);
-
         } else {
             $this->resetSearchOptions();
             $this->dispatch('swal:toast', [
                 'icon' => 'warning',
-                'title' => 'No se encontraron registros con ese criterio.'
+                'title' => $result['message']
             ]);
         }
     } catch (\Exception $e) {
@@ -178,34 +164,8 @@ $save = function () {
     $validatedData = $this->validate();
 
     try {
-        DB::transaction(function () use ($validatedData) {
-            // Crear el reporte de auditoría (la cabecera)
-            $auditoria = AuditoriaMateriaPrima::create([
-                'user_id' => Auth::id(),
-                'proveedor' => $validatedData['proveedor'],
-                'articulo' => $validatedData['articulo'],
-                'material' => $validatedData['material'],
-                'nombre_color' => $validatedData['nombre_color'],
-                'cantidad_recibida' => $validatedData['cantidad_recibida'],
-                'factura' => $validatedData['factura'],
-                'numero_lote' => $validatedData['numero_lote'],
-                'aql' => $validatedData['aql'],
-                'peso' => $validatedData['peso'],
-                'ancho' => $validatedData['ancho'],
-                'enlongacion' => $validatedData['enlongacion'],
-                'estatus' => $validatedData['estatus'],
-            ]);
-
-            // Crear el detalle y asociarlo al reporte recién creado
-            $auditoria->detalles()->create([
-                'numero_caja' => $validatedData['numero_caja'],
-                'metros' => $validatedData['metros'],
-                'peso_mt' => $validatedData['peso_mt'],
-                'ancho' => $validatedData['ancho_detalle'],
-                'enlongacion' => $validatedData['enlongacion_detalle'],
-                'encogimiento' => $validatedData['encogimiento'],
-            ]);
-        });
+        $service = new AuditoriaService();
+        $service->guardarAuditoria($validatedData);
 
         // Notificación de éxito
         $this->dispatch('swal:toast', [
@@ -225,6 +185,15 @@ $save = function () {
     }
 };
 
+// Función para confirmar antes de guardar
+$confirmSave = function () {
+    $this->dispatch('swal:confirm', [
+        'title' => '¿Guardar auditoría?',
+        'text' => '¿Estás seguro de que quieres guardar esta auditoría de materia prima?',
+        'icon' => 'question'
+    ], 'save');
+};
+
 ?>
 
 <div>
@@ -240,7 +209,7 @@ $save = function () {
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Busque la Orden de Compra o No. de
                         Recepción para cargar los datos del encabezado.</p>
 
-                    <form wire:submit.prevent="save">
+                    <form wire:submit.prevent="confirmSave">
                         <div class="space-y-8">
 
                             {{-- SECCIÓN DE BÚSQUEDA --}}
@@ -346,6 +315,7 @@ $save = function () {
                                         <label for="factura"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Factura</label>
                                         <input type="text" wire:model.live.debounce.300ms="factura" id="factura"
+                                            title="Número de factura del proveedor"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('factura') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
@@ -356,6 +326,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de
                                             Lote</label>
                                         <input type="text" wire:model.live.debounce.300ms="numero_lote" id="numero_lote"
+                                            title="Ingrese el número de lote proporcionado por el proveedor"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                         @error('numero_lote') <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror

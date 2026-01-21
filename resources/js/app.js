@@ -2,6 +2,10 @@
 import Swal from 'sweetalert2';
 import 'sweetalert2/src/sweetalert2.scss';
 
+// Importar Highcharts
+import Highcharts from 'highcharts';
+window.Highcharts = Highcharts;
+
 // Hacerlo accesible globalmente
 window.Swal = Swal;
 

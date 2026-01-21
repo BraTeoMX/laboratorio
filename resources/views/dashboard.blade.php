@@ -55,6 +55,10 @@
             </div>
         </div>
 
+        <div class="mt-6">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Estadísticas de Auditorías</h3>
+            <div id="chart-container" style="height: 400px;"></div>
+        </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div
@@ -219,5 +223,25 @@
 
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Highcharts.chart('chart-container', {
+                chart: {
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Estatus de Auditorías'
+                },
+                series: [{
+                    name: 'Auditorías',
+                    data: [
+                        { name: 'Aprobado', y: 5 },
+                        { name: 'Aceptado con Condición', y: 2 },
+                        { name: 'Rechazado', y: 1 }
+                    ]
+                }]
+            });
+        });
+    </script>
 
 </x-layouts.app>
