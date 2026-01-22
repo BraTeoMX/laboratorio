@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tela;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Spatie\LaravelPdf\Facades\Pdf;
 use Rap2hpoutre\FastExcel\FastExcel;
 
 class TelasExportController extends Controller
@@ -20,12 +20,11 @@ class TelasExportController extends Controller
             return $tela->precio_metro * $tela->stock_metros;
         });
 
-        $pdf = Pdf::loadView('telas.pdf', compact('telas', 'totalStock', 'totalValor'))
-            ->setPaper('a4', 'landscape')
-            ->setOption('margin-top', 10)
-            ->setOption('margin-bottom', 10);
-
-        return $pdf->download('inventario-telas-' . date('Y-m-d') . '.pdf');
+        return Pdf::view('telas.pdf', compact('telas', 'totalStock', 'totalValor'))
+            ->format('a4')
+            ->landscape()
+            ->margins(10, 10, 10, 10)
+            ->download('inventario-telas-' . date('Y-m-d') . '.pdf');
     }
 
     /**
