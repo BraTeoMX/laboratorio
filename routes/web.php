@@ -46,6 +46,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('calidad/inspeccion-tela', 'calidad.reporte-inspeccion')->name('calidad.inspeccion');
     Volt::route('calidad/auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('calidad.auditoria');
 
+    // Rutas de Reportes
+    Route::prefix('reportes')->name('reportes.')->group(function () {
+        Route::get('/inspeccion', \App\Livewire\Calidad\ReporteInspeccionRango::class)->name('inspeccion');
+    });
+
     // Vista específica para auditores (role_id = 5)
     Route::view('vista-auditor', 'vistaAuditor')->name('vistaAuditor');
 

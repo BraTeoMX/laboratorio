@@ -6,9 +6,7 @@ import 'sweetalert2/src/sweetalert2.scss';
 import Highcharts from 'highcharts';
 window.Highcharts = Highcharts;
 
-// Importar DataTables
-import DataTable from 'datatables.net';
-window.DataTable = DataTable;
+
 
 // Hacerlo accesible globalmente
 window.Swal = Swal;
