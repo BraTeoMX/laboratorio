@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     @include('partials.head')
@@ -102,21 +102,21 @@
                 <flux:menu.separator />
 
                 <div class="px-2 py-4">
-                    <div class="flex flex-col gap-1 w-full mb-4 items-start" x-data>
-                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click="$flux.appearance = 'light'"
-                            variant="ghost"
+                    <div class="flex flex-col gap-1 w-full mb-4 items-start opacity-60" x-data>
+                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'light' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Light') }}
                         </flux:button>
 
-                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click="$flux.appearance = 'dark'"
-                            variant="ghost"
+                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'dark' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Dark') }}
                         </flux:button>
 
-                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click="$flux.appearance = 'system'"
-                            variant="ghost"
+                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'system' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Sistema') }}
                         </flux:button>
@@ -164,21 +164,21 @@
                     </div>
                 </flux:menu.radio.group>
                 <div class="px-2 py-4">
-                    <div class="flex flex-col gap-1 w-full mb-4 items-start" x-data>
-                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click="$flux.appearance = 'light'"
-                            variant="ghost"
+                    <div class="flex flex-col gap-1 w-full mb-4 items-start opacity-60" x-data>
+                        <flux:button class="w-full justify-start text-left pl-3" icon="sun" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'light' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Light') }}
                         </flux:button>
 
-                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click="$flux.appearance = 'dark'"
-                            variant="ghost"
+                        <flux:button class="w-full justify-start text-left pl-3" icon="moon" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'dark' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Dark') }}
                         </flux:button>
 
-                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click="$flux.appearance = 'system'"
-                            variant="ghost"
+                        <flux:button class="w-full justify-start text-left pl-3" icon="computer-desktop" x-on:click.prevent
+                            variant="ghost" disabled aria-disabled="true"
                             x-bind:class="$flux.appearance === 'system' ? 'bg-white dark:bg-slate-600 text-zinc-900 dark:text-white shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10' : ''">
                             {{ __('Sistema') }}
                         </flux:button>
