@@ -7,17 +7,21 @@ use Illuminate\Database\Eloquent\Builder;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Footer;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Header;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
 use PowerComponents\LivewirePowerGrid\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridColumns;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use Illuminate\Support\Carbon;
+use PowerComponents\LivewirePowerGrid\Traits\Exportable as ExportableTrait;
 
 final class InspeccionesRangoTable extends PowerGridComponent
 {
     use WithExport;
+
+    public string $tableName = 'inspecciones-rango-table';
 
     public string $fecha_inicio = '';
     public string $fecha_fin = '';
@@ -34,15 +38,15 @@ final class InspeccionesRangoTable extends PowerGridComponent
     public function setUp(): array
     {
         return [
-            Header::make()
+            (new Header())
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make()
+            (new Footer())
                 ->showPerPage()
                 ->showRecordCount(),
-            \PowerComponents\LivewirePowerGrid\Exportable::make('export')
+            (new Exportable('export'))
                 ->striped()
-                ->type(\PowerComponents\LivewirePowerGrid\Traits\Exportable::EXCEL_CSV),
+                ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
         ];
     }
 
