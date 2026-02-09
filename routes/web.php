@@ -40,6 +40,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('vista-auditor', 'vistaAuditor')->name('dashboard.auditor'); // Antes: vistaAuditor
     Route::view('vista-gestor', 'vistaGestor')->name('dashboard.manager');   // Antes: vistaGestor
 
+    // --- Dashboard Principal KPI ---
+    Volt::route('dashboard/principal', 'dashboard.principal')->name('dashboard.principal');
+
     // --- User Management ---
     Volt::route('users', 'users.index')->name('users.index');
 

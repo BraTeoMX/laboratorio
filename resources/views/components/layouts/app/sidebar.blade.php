@@ -45,6 +45,11 @@
                 <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-nav-link>
+
+                {{-- Nuevo Dashboard KPI --}}
+                <x-nav-link :href="route('dashboard.principal')" icon="presentation-chart-bar" :active="request()->routeIs('dashboard.principal')">
+                    {{ __('Dashboard Calidad') }}
+                </x-nav-link>
             </flux:navlist.group>
         </flux:navlist>
         <flux:navlist variant="outline">
