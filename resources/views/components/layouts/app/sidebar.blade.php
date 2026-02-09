@@ -17,7 +17,7 @@
         @if(auth()->user()->role_id == 3)
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Gestión')" class="grid">
-                <x-nav-link :href="route('vistaGestor')" icon="cog-6-tooth" :active="request()->routeIs('vistaGestor')">
+                <x-nav-link :href="route('dashboard.manager')" icon="cog-6-tooth" :active="request()->routeIs('dashboard.manager')">
                     {{ __('Panel de Gestión') }}
                 </x-nav-link>
             </flux:navlist.group>
@@ -33,8 +33,8 @@
         @elseif(auth()->user()->role_id == 5)
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Auditoría')" class="grid">
-                <x-nav-link :href="route('vistaAuditor')" icon="clipboard-document-check"
-                    :active="request()->routeIs('vistaAuditor')">
+                <x-nav-link :href="route('dashboard.auditor')" icon="clipboard-document-check"
+                    :active="request()->routeIs('dashboard.auditor')">
                     {{ __('Panel de Auditor') }}
                 </x-nav-link>
             </flux:navlist.group>
@@ -68,9 +68,9 @@
             </x-nav-link>
         </flux:navlist.group>
 
-        <flux:navlist.group heading="Reportes" expandable :expanded="request()->routeIs('reportes.*')">
-            <x-nav-link :href="route('reportes.inspeccion')" icon="presentation-chart-line"
-                :active="request()->routeIs('reportes.inspeccion')">
+        <flux:navlist.group heading="Reportes" expandable :expanded="request()->routeIs('calidad.reportes.*')">
+            <x-nav-link :href="route('calidad.reportes.inspeccion')" icon="presentation-chart-line"
+                :active="request()->routeIs('calidad.reportes.inspeccion')">
                 {{ __('Reporte Inspección') }}
             </x-nav-link>
         </flux:navlist.group>

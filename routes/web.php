@@ -3,38 +3,47 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\TelasExportController;
+use App\Livewire\Calidad\ReporteInspeccionRango;
 
-// Ruta raíz inteligente que redirige según el estado de autenticación.
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
+
+// --- Entry Point ---
+// Redirige inteligentemente al dashboard correspondiente si el usuario ya está autenticado.
 Route::get('/', function () {
-    // Si el usuario ya está autenticado...
-    if (Auth::check()) {
-        // ...lo enviamos al 'dashboard' principal. Tu middleware 'role.redirect'
-        // se encargará de llevarlo al dashboard correcto (dashboard o dashboard2).
-        return redirect()->route('dashboard');
-    }
+    return Auth::check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+})->name('home');
 
-    // Si el usuario NO está autenticado (es un visitante)...
-    // ...lo enviamos a la página de inicio de sesión.
-    return redirect()->route('login');
-})->name('home'); // Mantenemos el nombre 'home' por si se usa en otro lugar.
-
-
-// Grupo principal para TODAS las rutas que requieren autenticación y email verificado
+// --- Authenticated Routes ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // 1. RUTA PRINCIPAL DE DASHBOARD
-    //    - Es a donde los usuarios son redirigidos después de iniciar sesión.
-    //    - Aplicamos el middleware 'role.redirect' para que actúe como un "distribuidor".
+    // --- Dashboards ---
+    // El middleware 'role.redirect' se encarga de la distribución según el rol.
     Route::view('dashboard', 'dashboard')
-        ->middleware('role.redirect') // <-- ¡Este es el paso clave que faltaba!
+        ->middleware('role.redirect')
         ->name('dashboard');
 
-    // 2. EL DASHBOARD SECUNDARIO
-    //    Lo ponemos dentro del mismo grupo porque también requiere autenticación.
-    Route::view('dashboard2', 'dashboard2')->name('dashboard2');
+    Route::view('dashboard2', 'dashboard2')->name('dashboard.alternate');
 
-    // 3. RUTAS DE CONFIGURACIÓN Y OTRAS
-    //    Agrupadas por prefijo para mantener el orden.
+    // Vistas específicas por Rol (Renombradas para consistencia)
+    Route::view('vista-auditor', 'vistaAuditor')->name('dashboard.auditor'); // Antes: vistaAuditor
+    Route::view('vista-gestor', 'vistaGestor')->name('dashboard.manager');   // Antes: vistaGestor
+
+    // --- User Management ---
+    Volt::route('users', 'users.index')->name('users.index');
+
+    // --- Settings Module ---
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::redirect('/', '/settings/profile');
         Volt::route('profile', 'settings.profile')->name('profile');
@@ -42,27 +51,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Volt::route('appearance', 'settings.appearance')->name('appearance');
     });
 
-    Volt::route('users', 'users.index')->name('users.index');
-    Volt::route('calidad/inspeccion-tela', 'calidad.reporte-inspeccion')->name('calidad.inspeccion');
-    Volt::route('calidad/auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('calidad.auditoria');
+    // --- Quality Control Module (Calidad) ---
+    Route::prefix('calidad')->name('calidad.')->group(function () {
+        // Operaciones principales
+        Volt::route('inspeccion-tela', 'calidad.reporte-inspeccion')->name('inspeccion');
+        Volt::route('auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('auditoria');
 
-    // Rutas de Reportes
-    Route::prefix('reportes')->name('reportes.')->group(function () {
-        Route::get('/inspeccion', \App\Livewire\Calidad\ReporteInspeccionRango::class)->name('inspeccion');
+        // Reportes específicos
+        Route::get('reportes/inspeccion', ReporteInspeccionRango::class)->name('reportes.inspeccion');
     });
 
-    // Vista específica para auditores (role_id = 5)
-    Route::view('vista-auditor', 'vistaAuditor')->name('vistaAuditor');
-
-    // Vista específica para gestores (role_id = 3)
-    Route::view('vista-gestor', 'vistaGestor')->name('vistaGestor');
-
-    // Rutas de Inventario de Telas (Demo)
+    // --- Fabrics Inventory (Telas) ---
     Route::prefix('telas')->name('telas.')->group(function () {
         Route::view('/', 'telas.index')->name('index');
-        Route::get('/export/pdf', [App\Http\Controllers\TelasExportController::class, 'exportPDF'])->name('export.pdf');
-        Route::get('/export/excel', [App\Http\Controllers\TelasExportController::class, 'exportExcel'])->name('export.excel');
+
+        // Exportaciones
+        Route::controller(TelasExportController::class)->prefix('export')->name('export.')->group(function () {
+            Route::get('pdf', 'exportPDF')->name('pdf');
+            Route::get('excel', 'exportExcel')->name('excel');
+        });
     });
+
+    // --- Reports (General) ---
+    // Si hay más reportes generales, agrégalos aquí. 
+    // Por ahora, 'inspeccion' se movió al módulo de Calidad por cohesión.
+    // Route::prefix('reportes')->name('reportes.')->group(function () { ... });
+
 });
 
 require __DIR__ . '/auth.php';
