@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Calidad;
+namespace App\Livewire\Reportes;
 
 use Livewire\Component;
 use App\Models\InspeccionReporte;
@@ -103,6 +103,6 @@ class ReporteInspeccionRango extends Component
 
     public function render()
     {
-        return view('livewire.calidad.reporte-inspeccion-rango');
+        return view('livewire.reportes.reporte-inspeccion-rango');
     }
 }

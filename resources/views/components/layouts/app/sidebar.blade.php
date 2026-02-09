@@ -68,9 +68,9 @@
             </x-nav-link>
         </flux:navlist.group>
 
-        <flux:navlist.group heading="Reportes" expandable :expanded="request()->routeIs('calidad.reportes.*')">
-            <x-nav-link :href="route('calidad.reportes.inspeccion')" icon="presentation-chart-line"
-                :active="request()->routeIs('calidad.reportes.inspeccion')">
+        <flux:navlist.group heading="Reportes" expandable :expanded="request()->routeIs('reportes.*')">
+            <x-nav-link :href="route('reportes.inspeccion')" icon="presentation-chart-line"
+                :active="request()->routeIs('reportes.inspeccion')">
                 {{ __('Reporte Inspección') }}
             </x-nav-link>
         </flux:navlist.group>

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\TelasExportController;
-use App\Livewire\Calidad\ReporteInspeccionRango;
+use App\Livewire\Reportes\ReporteInspeccionRango;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,13 +54,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Quality Control Module (Calidad) ---
     Route::prefix('calidad')->name('calidad.')->group(function () {
         // Operaciones principales
-        Volt::route('inspeccion-tela', 'calidad.reporte-inspeccion')->name('inspeccion');
+        Volt::route('inspeccion-tela', 'calidad.inspeccion-tela')->name('inspeccion');
         Volt::route('auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('auditoria');
-
-        // Reportes específicos
-        Route::get('reportes/inspeccion', ReporteInspeccionRango::class)->name('reportes.inspeccion');
     });
 
+    // --- Reports Module (Reportes) ---
+    Route::prefix('reportes')->name('reportes.')->group(function () {
+        // Reportes específicos
+        Route::get('inspeccion', ReporteInspeccionRango::class)->name('inspeccion');
+    });
     // --- Fabrics Inventory (Telas) ---
     Route::prefix('telas')->name('telas.')->group(function () {
         Route::view('/', 'telas.index')->name('index');

@@ -51,7 +51,7 @@
         {{-- PowerGrid Table --}}
         <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-6">
-                <livewire:calidad.inspecciones-rango-table />
+                <livewire:reportes.inspecciones-rango-table />
             </div>
         </div>
 

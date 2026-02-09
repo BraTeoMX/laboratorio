@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Calidad;
+namespace App\Livewire\Reportes;
 
 use App\Models\InspeccionReporte;
 use Illuminate\Database\Eloquent\Builder;
