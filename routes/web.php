@@ -43,6 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Dashboard Principal KPI ---
     Volt::route('dashboard/principal', 'dashboard.principal')->name('dashboard.principal');
 
+    // --- Dashboard Materia Prima ---
+    Volt::route('dashboard/materia-prima', 'dashboard.dashboard_materia_prima')->name('dashboard.materia-prima');
+
     // --- User Management ---
     Volt::route('users', 'users.index')->name('users.index');
 
