@@ -37,6 +37,7 @@ state([
     'telasInfo' => [], // Almacena la colección completa para preselección
     'original_ancho_contratado' => '',
     'previous_lote' => '',
+    'ancho_contratado_input' => '', // Para mostrar vacío cuando valor es 0; evita que el usuario tenga que borrar el "0" al escribir
 ]);
 
 // Función interna: ejecuta la búsqueda por valor (OC o No. Recepción) sin validación ni toasts.
@@ -189,6 +190,7 @@ $resetSearchOptions = function() {
     $this->articulo = '';
     $this->color_nombre = '';
     $this->ancho_contratado = '';
+    $this->ancho_contratado_input = '';
     $this->material = '';
     $this->orden_compra = '';
     $this->numero_recepcion = '';
@@ -219,6 +221,8 @@ $updatedLoteIntimark = function () {
             $this->ancho_contratado = $this->extraerAncho($record['nombre_producto_externo']); // Calcular ancho_contratado
             $this->original_ancho_contratado = $this->ancho_contratado; // Guardar el valor original
             $this->previous_lote = $this->lote_intimark; // Guardar el lote actual
+            // Mostrar vacío cuando valor es 0 para que el usuario pueda escribir directo (ej. "65") sin borrar
+            $this->ancho_contratado_input = ($this->ancho_contratado === '' || $this->ancho_contratado === null || (int) $this->ancho_contratado === 0) ? '' : (string) (int) $this->ancho_contratado;
         }
     }
 };
@@ -272,11 +276,14 @@ $ancho_contratado_cm = computed(function () {
     return $this->convertToCm($this->ancho_contratado);
 });
 
-// Hook para manejar cambios en ancho_contratado
-$updatedAnchoContratado = function () {
-    // Normalizar vacío o no numérico a 0 para evitar error en campo numérico (solo en vista/estado, no modifica columna)
-    $val = $this->ancho_contratado;
-    if ($val === '' || $val === null || !is_numeric($val)) {
+// Sincronizar valor real desde el input de visualización (no escribimos de vuelta a input para no cortar la escritura rápida)
+$updatedAnchoContratadoInput = function () {
+    $val = $this->ancho_contratado_input;
+    if ($val === '' || $val === null || trim((string) $val) === '') {
+        $this->ancho_contratado = 0;
+        return;
+    }
+    if (!is_numeric($val)) {
         $this->ancho_contratado = 0;
         return;
     }
@@ -291,17 +298,14 @@ $updatedAnchoContratado = function () {
     }
     $this->ancho_contratado = $num;
 
-    // Si el usuario modificó el ancho_contratado cuando era 0, y ahora cambia de lote a uno con valor > 0,
-    // necesitamos actualizar el dato de origen en telasInfo
+    // Si el usuario modificó el ancho_contratado cuando era 0, actualizar telasInfo e InternoInspeccionTela
     if ($this->previous_lote && (int) $this->original_ancho_contratado === 0 && $this->ancho_contratado != $this->original_ancho_contratado) {
-        // Buscar el registro en telasInfo y actualizarlo
         foreach ($this->telasInfo as &$record) {
             if ($record['lote_intimark'] === $this->previous_lote) {
                 $record['ancho_contratado'] = $this->ancho_contratado;
                 break;
             }
         }
-        // Actualizar también en la base de datos local si existe
         InternoInspeccionTela::where('lote_intimark', $this->previous_lote)
             ->update(['ancho_contratado' => $this->ancho_contratado]);
     }
@@ -575,7 +579,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Pulgadas)</label>
                                         <input type="number" step="1" min="0" max="1000"
-                                            wire:model.live="ancho_contratado"
+                                            wire:model.live="ancho_contratado_input"
                                             id="ancho_contratado"
                                             @if((int) $original_ancho_contratado > 0) readonly @endif
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700
