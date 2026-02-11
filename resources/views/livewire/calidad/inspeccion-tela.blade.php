@@ -5,11 +5,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 use App\Models\InspeccionTela;
 use App\Models\InternoInspeccionTela;
 use App\Models\InspeccionReporte;
 use App\Models\InspeccionDetalle;
+use App\Models\InspeccionDetalleDefecto;
 use App\Models\CatalogoDefecto;
 use App\Models\CatalogoMaquina;
 
@@ -105,7 +106,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                 ->whereDate('created_at', today())
                 ->where(function ($q) {
                     $q->where('numero_recepcion', $this->searchTerm)
-                      ->orWhere('orden_compra', $this->searchTerm);
+                        ->orWhere('orden_compra', $this->searchTerm);
                 })
                 ->latest()
                 ->first();
@@ -115,7 +116,7 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                 ? $ultimoReporteMismaBusqueda->lote_intimark
                 : null;
             $opcionCoincidente = $loteGuardado !== null
-                ? collect($this->loteIntimarkOptions)->first(fn ($o) => (string) $o === (string) $loteGuardado)
+                ? collect($this->loteIntimarkOptions)->first(fn($o) => (string) $o === (string) $loteGuardado)
                 : null;
             $loteSeleccionado = $opcionCoincidente !== null ? $opcionCoincidente : ($this->loteIntimarkOptions[0] ?? '');
 
@@ -158,7 +159,7 @@ $restaurarEncabezadoDesdeUltimoReporte = function () {
         $this->maquina = $ultimoReporte->maquina;
         // Usar el valor EXACTO de las opciones (mismo tipo que en el select) para que el select preseleccione bien
         $loteGuardado = $ultimoReporte->lote_intimark;
-        $opcionCoincidente = collect($this->loteIntimarkOptions)->first(fn ($o) => (string) $o === (string) $loteGuardado);
+        $opcionCoincidente = collect($this->loteIntimarkOptions)->first(fn($o) => (string) $o === (string) $loteGuardado);
         $this->lote_intimark = $opcionCoincidente !== null ? $opcionCoincidente : ($this->loteIntimarkOptions[0] ?? '');
         $this->updatedLoteIntimark();
     } else {
@@ -182,7 +183,7 @@ $restaurarEncabezadoDesdeUltimoReporte = function () {
     );
 };*/
 // AHORA (Usa esta en su lugar)
-$resetSearchOptions = function() {
+$resetSearchOptions = function () {
     $this->loteIntimarkOptions = [];
     $this->telasInfo = []; // Limpiar también la colección completa
     // Limpiar campos readonly
@@ -229,7 +230,7 @@ $updatedLoteIntimark = function () {
 // ------------------- FIN DE LA NUEVA LÓGICA -------------------
 
 // Función para extraer el ancho contratado desde nombre_producto_externo
-$extraerAncho = function($nombreProductoExterno) {
+$extraerAncho = function ($nombreProductoExterno) {
     if (preg_match('/(\d+)"/', $nombreProductoExterno, $matches)) {
         return (int) $matches[1];
     }
@@ -237,7 +238,7 @@ $extraerAncho = function($nombreProductoExterno) {
 };
 
 // Función para unificar estilo y color en articulo
-$unificarArticulo = function($estilo, $color) {
+$unificarArticulo = function ($estilo, $color) {
     if ($estilo && $color) {
         return $estilo . '.' . $color;
     }
@@ -331,7 +332,7 @@ state([
 //state('materiales', fn() => ['100% Algodón', '98% Algodón / 2% Spandex', '100% Poliéster', 'Otro']);
 
 // 4. Cargar los registros existentes para la tabla
-with(fn () => [
+with(fn() => [
     'registros' => InspeccionReporte::with('auditor', 'detalles')
         ->whereDate('created_at', today()) // <-- 1. Filtra por el día actual
         ->oldest()                         // <-- 2. Ordena del más antiguo al más nuevo
@@ -365,11 +366,19 @@ rules([
 ]);
 
 // Función para limpiar el formulario
-$resetForm = function() {
+$resetForm = function () {
     $this->reset(
         //'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
-        'numero_piezas', 'numero_lote', 'yarda_ticket', 'yarda_actual', 'ancho_cortable',
-        'puntos_1', 'puntos_2', 'puntos_3', 'puntos_4', 'observaciones'
+        'numero_piezas',
+        'numero_lote',
+        'yarda_ticket',
+        'yarda_actual',
+        'ancho_cortable',
+        'puntos_1',
+        'puntos_2',
+        'puntos_3',
+        'puntos_4',
+        'observaciones'
     );
     // Reiniciar los contadores de puntos a 0
     $this->puntos_1 = 0;
@@ -423,7 +432,6 @@ $save = function () {
 
         // Limpiar el formulario después de guardar
         $this->resetForm();
-
     } catch (\Exception $e) {
         // Notificación de error
         $this->dispatch('swal:toast', [
@@ -581,7 +589,7 @@ $save = function () {
                                         <input type="number" step="1" min="0" max="1000"
                                             wire:model.live="ancho_contratado_input"
                                             id="ancho_contratado"
-                                            @if((int) $original_ancho_contratado > 0) readonly @endif
+                                            @if((int) $original_ancho_contratado> 0) readonly @endif
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700
                                         dark:border-gray-700 @if((int) $original_ancho_contratado > 0) bg-gray-200 @endif sm:text-sm"
                                         placeholder="0">
@@ -710,7 +718,7 @@ $save = function () {
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                     @for ($i = 0; $i <= 20; $i++)
                                                         <option value="{{ $i }}">{{ $i }}</option>
-                                                    @endfor
+                                                        @endfor
                                                 </select>
                                                 @error('puntos_1') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
@@ -720,7 +728,7 @@ $save = function () {
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                     @for ($i = 0; $i <= 20; $i++)
                                                         <option value="{{ $i }}">{{ $i }}</option>
-                                                    @endfor
+                                                        @endfor
                                                 </select>
                                                 @error('puntos_2') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
@@ -730,7 +738,7 @@ $save = function () {
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                     @for ($i = 0; $i <= 20; $i++)
                                                         <option value="{{ $i }}">{{ $i }}</option>
-                                                    @endfor
+                                                        @endfor
                                                 </select>
                                                 @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
@@ -740,7 +748,7 @@ $save = function () {
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                     @for ($i = 0; $i <= 20; $i++)
                                                         <option value="{{ $i }}">{{ $i }}</option>
-                                                    @endfor
+                                                        @endfor
                                                 </select>
                                                 @error('puntos_4') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
