@@ -14,9 +14,9 @@ use App\Models\CatalogoDefecto;
 use App\Models\CatalogoMaquina;
 
 mount(function () {
-    // No precargamos aquí: la restauración del encabezado (si hay registro reciente del usuario hoy)
-    // se hace en restaurarEncabezadoDesdeUltimoReporte() vía wire:init, para poder ejecutar
-    // la búsqueda y hacer match con Máquina y Lote Intimark. La sección "2. Detalle" siempre queda en blanco.
+    // Restauración del encabezado en el mismo request inicial: así el select Lote Intimark
+    // ya viene con opciones y valor preseleccionado en la primera respuesta (sin depender de wire:init).
+    $this->restaurarEncabezadoDesdeUltimoReporte();
 });
 
 // ------------------- NUEVA LÓGICA DE BÚSQUEDA -------------------
@@ -96,7 +96,29 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
         $encontrado = $this->ejecutarBusquedaPorValor($this->searchTerm, $forceDirectQuery);
 
         if ($encontrado) {
-            $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : '';
+            // Intentar preseleccionar el ÚLTIMO lote usado hoy por el usuario
+            // para esta misma OC / No. de Recepción. Si no existe, usar la primera opción.
+            $loteSeleccionado = null;
+
+            $ultimoReporteMismaBusqueda = InspeccionReporte::where('user_id', Auth::id())
+                ->whereDate('created_at', today())
+                ->where(function ($q) {
+                    $q->where('numero_recepcion', $this->searchTerm)
+                      ->orWhere('orden_compra', $this->searchTerm);
+                })
+                ->latest()
+                ->first();
+
+            // Usar el valor EXACTO de las opciones (mismo tipo que en el select) para que preseleccione bien
+            $loteGuardado = $ultimoReporteMismaBusqueda && !empty($ultimoReporteMismaBusqueda->lote_intimark)
+                ? $ultimoReporteMismaBusqueda->lote_intimark
+                : null;
+            $opcionCoincidente = $loteGuardado !== null
+                ? collect($this->loteIntimarkOptions)->first(fn ($o) => (string) $o === (string) $loteGuardado)
+                : null;
+            $loteSeleccionado = $opcionCoincidente !== null ? $opcionCoincidente : ($this->loteIntimarkOptions[0] ?? '');
+
+            $this->lote_intimark = $loteSeleccionado;
             $this->updatedLoteIntimark();
             $titulo = $forceDirectQuery ? 'Consulta directa completada. Información actualizada.' : 'Información encontrada. Seleccione las opciones correctas.';
             $this->dispatch('swal:toast', ['icon' => 'success', 'title' => $titulo]);
@@ -133,7 +155,10 @@ $restaurarEncabezadoDesdeUltimoReporte = function () {
 
     if ($encontrado) {
         $this->maquina = $ultimoReporte->maquina;
-        $this->lote_intimark = $ultimoReporte->lote_intimark;
+        // Usar el valor EXACTO de las opciones (mismo tipo que en el select) para que el select preseleccione bien
+        $loteGuardado = $ultimoReporte->lote_intimark;
+        $opcionCoincidente = collect($this->loteIntimarkOptions)->first(fn ($o) => (string) $o === (string) $loteGuardado);
+        $this->lote_intimark = $opcionCoincidente !== null ? $opcionCoincidente : ($this->loteIntimarkOptions[0] ?? '');
         $this->updatedLoteIntimark();
     } else {
         $this->maquina = $ultimoReporte->maquina;
@@ -389,7 +414,7 @@ $save = function () {
 
 ?>
 
-<div wire:init="restaurarEncabezadoDesdeUltimoReporte">
+<div>
     <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
         {{ __('Control de Calidad') }}
     </h2>
@@ -485,6 +510,7 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lote
                                             Intimark</label>
                                         <select wire:model.live="lote_intimark" wire:change="$this->updatedLoteIntimark"
+                                            wire:key="lote-intimark-{{ count($loteIntimarkOptions) }}-{{ $lote_intimark }}"
                                             id="lote_intimark" @disabled(empty($loteIntimarkOptions))
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-500 disabled:cursor-not-allowed">
                                             @forelse($loteIntimarkOptions as $option)
