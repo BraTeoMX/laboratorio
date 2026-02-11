@@ -274,9 +274,26 @@ $ancho_contratado_cm = computed(function () {
 
 // Hook para manejar cambios en ancho_contratado
 $updatedAnchoContratado = function () {
+    // Normalizar vacío o no numérico a 0 para evitar error en campo numérico (solo en vista/estado, no modifica columna)
+    $val = $this->ancho_contratado;
+    if ($val === '' || $val === null || !is_numeric($val)) {
+        $this->ancho_contratado = 0;
+        return;
+    }
+    $num = (int) $val;
+    if ($num < 0) {
+        $this->ancho_contratado = 0;
+        return;
+    }
+    if ($num > 1000) {
+        $this->ancho_contratado = 1000;
+        return;
+    }
+    $this->ancho_contratado = $num;
+
     // Si el usuario modificó el ancho_contratado cuando era 0, y ahora cambia de lote a uno con valor > 0,
     // necesitamos actualizar el dato de origen en telasInfo
-    if ($this->previous_lote && $this->original_ancho_contratado == 0 && $this->ancho_contratado != $this->original_ancho_contratado) {
+    if ($this->previous_lote && (int) $this->original_ancho_contratado === 0 && $this->ancho_contratado != $this->original_ancho_contratado) {
         // Buscar el registro en telasInfo y actualizarlo
         foreach ($this->telasInfo as &$record) {
             if ($record['lote_intimark'] === $this->previous_lote) {
@@ -325,7 +342,7 @@ rules([
     'proveedor' => 'required|string|max:255',
     'articulo' => 'required|string|max:255',
     'color_nombre' => 'required|string|max:255',
-    'ancho_contratado' => 'required|integer|min:0',
+    'ancho_contratado' => 'nullable|integer|min:0|max:1000',
     'material' => 'required|string|max:255',
     'orden_compra' => 'required|string|max:255',
     'numero_recepcion' => 'required|string|max:255',
@@ -372,7 +389,7 @@ $save = function () {
                 'proveedor' => $validatedData['proveedor'],
                 'articulo' => $validatedData['articulo'],
                 'color_nombre' => $validatedData['color_nombre'],
-                'ancho_contratado' => $validatedData['ancho_contratado'],
+                'ancho_contratado' => (int) ($validatedData['ancho_contratado'] ?? 0),
                 'ancho_contratado_cm' => $this->ancho_contratado_cm,
                 'material' => $validatedData['material'],
                 'orden_compra' => $validatedData['orden_compra'],
@@ -552,15 +569,18 @@ $save = function () {
                                             }}</span> @enderror
                                     </div>
 
-                                    {{-- Ancho Contratado (Pulgadas) --}}
+                                    {{-- Ancho Contratado (Pulgadas): editable solo si valor de consulta es 0/null; vacío = 0; rango 0-1000 --}}
                                     <div class="sm:col-span-1">
                                         <label for="ancho_contratado"
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ancho
                                             Contratado (Pulgadas)</label>
-                                        <input type="number" step="1" wire:model.live="ancho_contratado"
-                                            id="ancho_contratado" @if($ancho_contratado> 0) readonly @endif
+                                        <input type="number" step="1" min="0" max="1000"
+                                            wire:model.live="ancho_contratado"
+                                            id="ancho_contratado"
+                                            @if((int) $original_ancho_contratado > 0) readonly @endif
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700
-                                        dark:border-gray-700 @if($ancho_contratado > 0) bg-gray-200 @endif sm:text-sm">
+                                        dark:border-gray-700 @if((int) $original_ancho_contratado > 0) bg-gray-200 @endif sm:text-sm"
+                                        placeholder="0">
                                         @error('ancho_contratado') <span class="text-red-500 text-xs">{{ $message
                                             }}</span> @enderror
                                     </div>
