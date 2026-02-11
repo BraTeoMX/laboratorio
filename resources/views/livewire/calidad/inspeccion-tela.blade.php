@@ -14,23 +14,9 @@ use App\Models\CatalogoDefecto;
 use App\Models\CatalogoMaquina;
 
 mount(function () {
-    // Buscar el último reporte creado HOY por el USUARIO ACTUAL
-    $ultimoReporte = InspeccionReporte::where('user_id', Auth::id())
-        ->whereDate('created_at', today())
-        ->latest() // Ordena por fecha de creación descendente
-        ->first(); // Obtiene solo el más reciente
-
-    // Si encontramos un reporte, pre-cargamos el formulario del encabezado
-    if ($ultimoReporte) {
-        $this->maquina          = $ultimoReporte->maquina;
-        $this->proveedor        = $ultimoReporte->proveedor;
-        $this->articulo         = $ultimoReporte->articulo;
-        $this->color_nombre     = $ultimoReporte->color_nombre;
-        $this->ancho_contratado = $ultimoReporte->ancho_contratado;
-        $this->material         = $ultimoReporte->material;
-        $this->orden_compra     = $ultimoReporte->orden_compra;
-        $this->numero_recepcion = $ultimoReporte->numero_recepcion;
-    }
+    // No precargamos aquí: la restauración del encabezado (si hay registro reciente del usuario hoy)
+    // se hace en restaurarEncabezadoDesdeUltimoReporte() vía wire:init, para poder ejecutar
+    // la búsqueda y hacer match con Máquina y Lote Intimark. La sección "2. Detalle" siempre queda en blanco.
 });
 
 // ------------------- NUEVA LÓGICA DE BÚSQUEDA -------------------
@@ -53,52 +39,25 @@ state([
     'previous_lote' => '',
 ]);
 
-// Función para realizar la búsqueda inteligente
-$buscarInformacionTela = function ($forceDirectQuery = false) {
-    // 1. Validar que el término de búsqueda no esté vacío
-    $this->validate(['searchTerm' => 'required|string|min:3']);
+// Función interna: ejecuta la búsqueda por valor (OC o No. Recepción) sin validación ni toasts.
+// Devuelve true si encontró resultados y llenó loteIntimarkOptions y telasInfo. No preselecciona lote.
+$ejecutarBusquedaPorValor = function ($valor, $forceDirectQuery = false) {
+    if (strlen($valor) < 3) {
+        return false;
+    }
+    $esBusquedaPorRecepcion = strtoupper(substr($valor, 0, 3)) === 'REC';
+    $columna = $esBusquedaPorRecepcion ? 'numero_diario' : 'orden_compra';
+    $telasInfo = null;
 
-    try {
-        // 2. Determinar la columna de búsqueda
-        $esBusquedaPorRecepcion = strtoupper(substr($this->searchTerm, 0, 3)) === 'REC';
-        $columna = $esBusquedaPorRecepcion ? 'numero_diario' : 'orden_compra';
-        $valor = $this->searchTerm;
-
-        $telasInfo = null;
-
-        if (!$forceDirectQuery) {
-            // 3. Primero intentar buscar en la tabla local InternoInspeccionTela
-            $telasInfo = InternoInspeccionTela::where($columna, $valor)->get();
-
-            if ($telasInfo->isEmpty()) {
-                // 4. Si no hay resultados en local, consultar InspeccionTela con método optimizado
-                // Usa consulta directa que aplica el filtro ANTES de los JOINs (mucho más rápido)
-                $telasInfo = InspeccionTela::buscarOptimizado($valor);
-
-                if ($telasInfo->isNotEmpty()) {
-                    // 5. Almacenar los resultados en la tabla local
-                    foreach ($telasInfo as $tela) {
-                        $data = $tela->toArray();
-                        $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
-                        $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color); // Unificar estilo.color en articulo
-                        InternoInspeccionTela::updateOrCreate(
-                            ['lote_intimark' => $tela->lote_intimark], // Condición de búsqueda
-                            $data // Datos a actualizar o crear con ancho_contratado y articulo
-                        );
-                    }
-                }
-            }
-        } else {
-            // 6. Consulta directa forzada a InspeccionTela (sin usar caché local)
-            // Usa método optimizado que aplica el filtro ANTES de los JOINs
+    if (!$forceDirectQuery) {
+        $telasInfo = InternoInspeccionTela::where($columna, $valor)->get();
+        if ($telasInfo->isEmpty()) {
             $telasInfo = InspeccionTela::buscarOptimizado($valor);
-
             if ($telasInfo->isNotEmpty()) {
-                // 7. Actualizar la tabla local con los datos frescos
                 foreach ($telasInfo as $tela) {
                     $data = $tela->toArray();
-                    $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo); // Extraer y asignar ancho_contratado
-                    $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color); // Unificar estilo.color en articulo
+                    $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo);
+                    $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color);
                     InternoInspeccionTela::updateOrCreate(
                         ['lote_intimark' => $tela->lote_intimark],
                         $data
@@ -106,43 +65,86 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
                 }
             }
         }
-
-        // 8. Si la colección NO está vacía, procesar los datos
+    } else {
+        $telasInfo = InspeccionTela::buscarOptimizado($valor);
         if ($telasInfo->isNotEmpty()) {
-            // >>> MODIFICADO: Solo extraer opciones únicas para lote_intimark <<<
-            $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
+            foreach ($telasInfo as $tela) {
+                $data = $tela->toArray();
+                $data['ancho_contratado'] = $this->extraerAncho($tela->nombre_producto_externo);
+                $data['articulo'] = $this->unificarArticulo($tela->estilo, $tela->color);
+                InternoInspeccionTela::updateOrCreate(
+                    ['lote_intimark' => $tela->lote_intimark],
+                    $data
+                );
+            }
+        }
+    }
 
-            // >>> NUEVO: Almacenar la colección completa para preselección <<<
-            $this->telasInfo = $telasInfo->toArray();
+    if ($telasInfo && $telasInfo->isNotEmpty()) {
+        $this->loteIntimarkOptions = $telasInfo->pluck('lote_intimark')->unique()->values()->all();
+        $this->telasInfo = $telasInfo->toArray();
+        return true;
+    }
+    return false;
+};
 
-            // >>> MODIFICADO: Preseleccionar el primer lote (usar valor real) y actualizar campos readonly <<<
-            $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : ''; // Usar el valor real
-            // Llamar a updatedLoteIntimark para poblar los demás campos
+// Función para realizar la búsqueda inteligente (desde la UI)
+$buscarInformacionTela = function ($forceDirectQuery = false) {
+    $this->validate(['searchTerm' => 'required|string|min:3']);
+
+    try {
+        $encontrado = $this->ejecutarBusquedaPorValor($this->searchTerm, $forceDirectQuery);
+
+        if ($encontrado) {
+            $this->lote_intimark = !empty($this->loteIntimarkOptions) ? $this->loteIntimarkOptions[0] : '';
             $this->updatedLoteIntimark();
-
-            // Notificación de éxito
             $titulo = $forceDirectQuery ? 'Consulta directa completada. Información actualizada.' : 'Información encontrada. Seleccione las opciones correctas.';
-            $this->dispatch('swal:toast', [
-                'icon' => 'success',
-                'title' => $titulo
-            ]);
-
+            $this->dispatch('swal:toast', ['icon' => 'success', 'title' => $titulo]);
         } else {
-            // Si no se encuentra, limpiar y notificar al usuario
-            $this->resetSearchOptions(); // Limpiar formulario y opciones
-            $this->dispatch('swal:toast', [
-                'icon' => 'warning',
-                'title' => 'No se encontraron registros con ese criterio.'
-            ]);
+            $this->resetSearchOptions();
+            $this->dispatch('swal:toast', ['icon' => 'warning', 'title' => 'No se encontraron registros con ese criterio.']);
         }
     } catch (\Exception $e) {
-        // Manejo de errores
         Log::error($e);
         $this->resetSearchOptions();
-        $this->dispatch('swal:toast', [
-            'icon' => 'error',
-            'title' => 'Error al buscar la información: ' . $e->getMessage()
-        ]);
+        $this->dispatch('swal:toast', ['icon' => 'error', 'title' => 'Error al buscar la información: ' . $e->getMessage()]);
+    }
+};
+
+// Restaura el encabezado (1) si el usuario tiene registros de hoy: hace búsqueda previa y match Máquina + Lote Intimark.
+// La sección (2) Detalle siempre queda en blanco. Se invoca desde wire:init al cargar la vista.
+$restaurarEncabezadoDesdeUltimoReporte = function () {
+    $ultimoReporte = InspeccionReporte::where('user_id', Auth::id())
+        ->whereDate('created_at', today())
+        ->latest()
+        ->first();
+
+    if (!$ultimoReporte) {
+        return;
+    }
+
+    $valor = !empty($ultimoReporte->numero_recepcion) ? $ultimoReporte->numero_recepcion : $ultimoReporte->orden_compra;
+    if (strlen($valor) < 3) {
+        return;
+    }
+
+    $this->searchTerm = $valor;
+    $encontrado = $this->ejecutarBusquedaPorValor($valor, false);
+
+    if ($encontrado) {
+        $this->maquina = $ultimoReporte->maquina;
+        $this->lote_intimark = $ultimoReporte->lote_intimark;
+        $this->updatedLoteIntimark();
+    } else {
+        $this->maquina = $ultimoReporte->maquina;
+        $this->lote_intimark = $ultimoReporte->lote_intimark;
+        $this->proveedor = $ultimoReporte->proveedor;
+        $this->articulo = $ultimoReporte->articulo;
+        $this->color_nombre = $ultimoReporte->color_nombre;
+        $this->ancho_contratado = $ultimoReporte->ancho_contratado;
+        $this->material = $ultimoReporte->material;
+        $this->orden_compra = $ultimoReporte->orden_compra;
+        $this->numero_recepcion = $ultimoReporte->numero_recepcion;
     }
 };
 
@@ -387,7 +389,7 @@ $save = function () {
 
 ?>
 
-<div>
+<div wire:init="restaurarEncabezadoDesdeUltimoReporte">
     <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
         {{ __('Control de Calidad') }}
     </h2>
