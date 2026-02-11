@@ -336,10 +336,10 @@ rules([
     'yarda_ticket' => 'required|numeric|min:0',
     'yarda_actual' => 'required|numeric|min:0',
     'ancho_cortable' => 'required|numeric|min:0',
-    'puntos_1' => 'required|integer|min:0',
-    'puntos_2' => 'required|integer|min:0',
-    'puntos_3' => 'required|integer|min:0',
-    'puntos_4' => 'required|integer|min:0',
+    'puntos_1' => 'required|integer|min:0|max:20',
+    'puntos_2' => 'required|integer|min:0|max:20',
+    'puntos_3' => 'required|integer|min:0|max:20',
+    'puntos_4' => 'required|integer|min:0|max:20',
     'observaciones' => 'nullable|string',
 ]);
 
@@ -679,38 +679,46 @@ $save = function () {
                                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos
                                             por Puntos</label>
                                         <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {{-- Contenido de los puntos (se mantiene igual) --}}
+                                            {{-- Defectos por Puntos: selects 0–20, preselección 0; se resetean a 0 al guardar --}}
                                             <div>
                                                 <label for="puntos_1" class="text-xs text-gray-500">1 Punto</label>
-                                                <input type="number" wire:model.live.debounce.300ms="puntos_1"
-                                                    id="puntos_1"
+                                                <select wire:model.live="puntos_1" id="puntos_1"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                @error('puntos_1') <span class="text-red-500 text-xs">{{ $message
-                                                    }}</span> @enderror
+                                                    @for ($i = 0; $i <= 20; $i++)
+                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                                @error('puntos_1') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_2" class="text-xs text-gray-500">2 Puntos</label>
-                                                <input type="number" wire:model.live.debounce.300ms="puntos_2"
-                                                    id="puntos_2"
+                                                <select wire:model.live="puntos_2" id="puntos_2"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                @error('puntos_2') <span class="text-red-500 text-xs">{{ $message
-                                                    }}</span> @enderror
+                                                    @for ($i = 0; $i <= 20; $i++)
+                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                                @error('puntos_2') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_3" class="text-xs text-gray-500">3 Puntos</label>
-                                                <input type="number" wire:model.live.debounce.300ms="puntos_3"
-                                                    id="puntos_3"
+                                                <select wire:model.live="puntos_3" id="puntos_3"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                @error('puntos_3') <span class="text-red-500 text-xs">{{ $message
-                                                    }}</span> @enderror
+                                                    @for ($i = 0; $i <= 20; $i++)
+                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                                @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="puntos_4" class="text-xs text-gray-500">4 Puntos</label>
-                                                <input type="number" wire:model.live.debounce.300ms="puntos_4"
-                                                    id="puntos_4"
+                                                <select wire:model.live="puntos_4" id="puntos_4"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                @error('puntos_4') <span class="text-red-500 text-xs">{{ $message
-                                                    }}</span> @enderror
+                                                    @for ($i = 0; $i <= 20; $i++)
+                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                                @error('puntos_4') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
                                         </div>
                                     </div>
