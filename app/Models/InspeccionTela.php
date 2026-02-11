@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -105,5 +106,117 @@ class InspeccionTela extends Model
         }
 
         return null; // Retorna null si no se encuentra el patrón
+    }
+
+    /**
+     * Busca registros por numero_diario (JOURNALID) usando consulta directa optimizada.
+     * Esta consulta es mucho más rápida que usar la vista porque el filtro se aplica
+     * ANTES de hacer los JOINs al linked server.
+     *
+     * @param string $numeroDiario El número de diario/recepción (ej. 'REC123')
+     * @return \Illuminate\Support\Collection
+     */
+    public static function buscarPorNumeroDiario(string $numeroDiario)
+    {
+        $sql = "
+            SELECT DISTINCT
+                ISNULL(NULLIF(WJT.JOURNALID, ''), 'N/A') AS numero_diario,
+                ISNULL(NULLIF(WJT.INVENTTRANSREFID, ''), 'N/A') AS orden_compra,
+                ISNULL(NULLIF(WJT.DESCRIPTION, ''), 'N/A') AS proveedor,
+                ISNULL(NULLIF(WJT_TRANS.ITEMID, ''), 'N/A') AS estilo,
+                ISNULL(NULLIF(PL.NAME, ''), 'N/A') AS nombre_producto,
+                ISNULL(NULLIF(PL.EXTERNALDESCRIPTION_AT, ''), 'N/A') AS nombre_producto_externo,
+                ISNULL(NULLIF(PL.EXTERNALITEMID, ''), 'N/A') AS estilo_externo,
+                ISNULL(NULLIF(IDIM.INVENTSIZEID, ''), 'N/A') AS talla,
+                ISNULL(NULLIF(IDIM.INVENTCOLORID, ''), 'N/A') AS color,
+                ISNULL(NULLIF(IDIM.INVENTBATCHID, ''), 'N/A') AS lote_intimark
+            FROM 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[WMSJOURNALTABLE] AS WJT
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[WMSJOURNALTRANS] AS WJT_TRANS
+                ON WJT.JOURNALID = WJT_TRANS.JOURNALID
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[PURCHLINE] AS PL
+                ON WJT_TRANS.INVENTTRANSID = PL.INVENTTRANSID
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[INVENTDIM] AS IDIM
+                ON WJT_TRANS.INVENTDIMID = IDIM.INVENTDIMID
+            WHERE 
+                WJT.JOURNALID = ?
+        ";
+
+        $results = DB::connection('sqlsrv_dev')->select($sql, [$numeroDiario]);
+
+        // Convertir a colección de objetos con los mismos atributos que el modelo
+        return collect($results)->map(function ($item) {
+            $model = new static();
+            $model->setRawAttributes((array) $item, true);
+            return $model;
+        });
+    }
+
+    /**
+     * Busca registros por orden_compra usando consulta directa optimizada.
+     * Nota: Esta búsqueda podría ser más lenta ya que INVENTTRANSREFID no está
+     * en la tabla principal del JOIN.
+     *
+     * @param string $ordenCompra El número de orden de compra
+     * @return \Illuminate\Support\Collection
+     */
+    public static function buscarPorOrdenCompra(string $ordenCompra)
+    {
+        $sql = "
+            SELECT DISTINCT
+                ISNULL(NULLIF(WJT.JOURNALID, ''), 'N/A') AS numero_diario,
+                ISNULL(NULLIF(WJT.INVENTTRANSREFID, ''), 'N/A') AS orden_compra,
+                ISNULL(NULLIF(WJT.DESCRIPTION, ''), 'N/A') AS proveedor,
+                ISNULL(NULLIF(WJT_TRANS.ITEMID, ''), 'N/A') AS estilo,
+                ISNULL(NULLIF(PL.NAME, ''), 'N/A') AS nombre_producto,
+                ISNULL(NULLIF(PL.EXTERNALDESCRIPTION_AT, ''), 'N/A') AS nombre_producto_externo,
+                ISNULL(NULLIF(PL.EXTERNALITEMID, ''), 'N/A') AS estilo_externo,
+                ISNULL(NULLIF(IDIM.INVENTSIZEID, ''), 'N/A') AS talla,
+                ISNULL(NULLIF(IDIM.INVENTCOLORID, ''), 'N/A') AS color,
+                ISNULL(NULLIF(IDIM.INVENTBATCHID, ''), 'N/A') AS lote_intimark
+            FROM 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[WMSJOURNALTABLE] AS WJT
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[WMSJOURNALTRANS] AS WJT_TRANS
+                ON WJT.JOURNALID = WJT_TRANS.JOURNALID
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[PURCHLINE] AS PL
+                ON WJT_TRANS.INVENTTRANSID = PL.INVENTTRANSID
+            INNER JOIN 
+                [AX_SERVER_LIVE].[INTIMARKDBAXPRODLIVE].[dbo].[INVENTDIM] AS IDIM
+                ON WJT_TRANS.INVENTDIMID = IDIM.INVENTDIMID
+            WHERE 
+                WJT.INVENTTRANSREFID = ?
+        ";
+
+        $results = DB::connection('sqlsrv_dev')->select($sql, [$ordenCompra]);
+
+        // Convertir a colección de objetos con los mismos atributos que el modelo
+        return collect($results)->map(function ($item) {
+            $model = new static();
+            $model->setRawAttributes((array) $item, true);
+            return $model;
+        });
+    }
+
+    /**
+     * Método unificado para buscar por numero_diario o orden_compra.
+     * Detecta automáticamente el tipo de búsqueda basado en el prefijo 'REC'.
+     *
+     * @param string $termino El término de búsqueda
+     * @return \Illuminate\Support\Collection
+     */
+    public static function buscarOptimizado(string $termino)
+    {
+        $esBusquedaPorRecepcion = strtoupper(substr($termino, 0, 3)) === 'REC';
+        
+        if ($esBusquedaPorRecepcion) {
+            return static::buscarPorNumeroDiario($termino);
+        }
+        
+        return static::buscarPorOrdenCompra($termino);
     }
 }

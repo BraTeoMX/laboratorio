@@ -71,8 +71,9 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
             $telasInfo = InternoInspeccionTela::where($columna, $valor)->get();
 
             if ($telasInfo->isEmpty()) {
-                // 4. Si no hay resultados en local, consultar InspeccionTela y almacenar
-                $telasInfo = InspeccionTela::where($columna, $valor)->get();
+                // 4. Si no hay resultados en local, consultar InspeccionTela con método optimizado
+                // Usa consulta directa que aplica el filtro ANTES de los JOINs (mucho más rápido)
+                $telasInfo = InspeccionTela::buscarOptimizado($valor);
 
                 if ($telasInfo->isNotEmpty()) {
                     // 5. Almacenar los resultados en la tabla local
@@ -89,7 +90,8 @@ $buscarInformacionTela = function ($forceDirectQuery = false) {
             }
         } else {
             // 6. Consulta directa forzada a InspeccionTela (sin usar caché local)
-            $telasInfo = InspeccionTela::where($columna, $valor)->get();
+            // Usa método optimizado que aplica el filtro ANTES de los JOINs
+            $telasInfo = InspeccionTela::buscarOptimizado($valor);
 
             if ($telasInfo->isNotEmpty()) {
                 // 7. Actualizar la tabla local con los datos frescos
