@@ -354,8 +354,137 @@ $ajustarDefectosPuntos3 = function () {
     $this->defectos_puntos_3 = array_values($defectos);
 };
 
+// Ajusta automáticamente el desglose de defectos de puntos_1 cuando cambia el total
+$ajustarDefectosPuntos1 = function () {
+    $defectos = $this->defectos_puntos_1 ?? [];
+    $total = (int) ($this->puntos_1 ?? 0);
+
+    if (! is_array($defectos) || $total <= 0) {
+        $this->defectos_puntos_1 = [];
+        return;
+    }
+
+    $suma = 0;
+    foreach ($defectos as $fila) {
+        $suma += (int) ($fila['cantidad'] ?? 0);
+    }
+
+    if ($suma <= $total) {
+        return;
+    }
+
+    // Recortar desde el final hasta que la suma no exceda el total
+    for ($i = count($defectos) - 1; $i >= 0 && $suma > $total; $i--) {
+        $cantidad = (int) ($defectos[$i]['cantidad'] ?? 0);
+
+        if ($cantidad <= 0) {
+            array_splice($defectos, $i, 1);
+            continue;
+        }
+
+        $exceso = $suma - $total;
+
+        if ($cantidad > $exceso) {
+            $defectos[$i]['cantidad'] = $cantidad - $exceso;
+            $suma = $total;
+        } else {
+            $suma -= $cantidad;
+            array_splice($defectos, $i, 1);
+        }
+    }
+
+    $this->defectos_puntos_1 = array_values($defectos);
+};
+
+// Ajusta automáticamente el desglose de defectos de puntos_2 cuando cambia el total
+$ajustarDefectosPuntos2 = function () {
+    $defectos = $this->defectos_puntos_2 ?? [];
+    $total = (int) ($this->puntos_2 ?? 0);
+
+    if (! is_array($defectos) || $total <= 0) {
+        $this->defectos_puntos_2 = [];
+        return;
+    }
+
+    $suma = 0;
+    foreach ($defectos as $fila) {
+        $suma += (int) ($fila['cantidad'] ?? 0);
+    }
+
+    if ($suma <= $total) {
+        return;
+    }
+
+    // Recortar desde el final hasta que la suma no exceda el total
+    for ($i = count($defectos) - 1; $i >= 0 && $suma > $total; $i--) {
+        $cantidad = (int) ($defectos[$i]['cantidad'] ?? 0);
+
+        if ($cantidad <= 0) {
+            array_splice($defectos, $i, 1);
+            continue;
+        }
+
+        $exceso = $suma - $total;
+
+        if ($cantidad > $exceso) {
+            $defectos[$i]['cantidad'] = $cantidad - $exceso;
+            $suma = $total;
+        } else {
+            $suma -= $cantidad;
+            array_splice($defectos, $i, 1);
+        }
+    }
+
+    $this->defectos_puntos_2 = array_values($defectos);
+};
+
+// Ajusta automáticamente el desglose de defectos de puntos_4 cuando cambia el total
+$ajustarDefectosPuntos4 = function () {
+    $defectos = $this->defectos_puntos_4 ?? [];
+    $total = (int) ($this->puntos_4 ?? 0);
+
+    if (! is_array($defectos) || $total <= 0) {
+        $this->defectos_puntos_4 = [];
+        return;
+    }
+
+    $suma = 0;
+    foreach ($defectos as $fila) {
+        $suma += (int) ($fila['cantidad'] ?? 0);
+    }
+
+    if ($suma <= $total) {
+        return;
+    }
+
+    // Recortar desde el final hasta que la suma no exceda el total
+    for ($i = count($defectos) - 1; $i >= 0 && $suma > $total; $i--) {
+        $cantidad = (int) ($defectos[$i]['cantidad'] ?? 0);
+
+        if ($cantidad <= 0) {
+            array_splice($defectos, $i, 1);
+            continue;
+        }
+
+        $exceso = $suma - $total;
+
+        if ($cantidad > $exceso) {
+            $defectos[$i]['cantidad'] = $cantidad - $exceso;
+            $suma = $total;
+        } else {
+            $suma -= $cantidad;
+            array_splice($defectos, $i, 1);
+        }
+    }
+
+    $this->defectos_puntos_4 = array_values($defectos);
+};
+
 updated([
+    'puntos_1' => fn() => $this->ajustarDefectosPuntos1(),
+    'puntos_2' => fn() => $this->ajustarDefectosPuntos2(),
     'puntos_3' => fn() => $this->ajustarDefectosPuntos3(),
+    'puntos_4' => fn() => $this->ajustarDefectosPuntos4(),
 ]);
 
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
@@ -381,6 +510,78 @@ state([
 $defectoCantidadOptionsPuntos3 = computed(function () {
     $total = (int) ($this->puntos_3 ?? 0);
     $filas = $this->defectos_puntos_3 ?? [];
+    $options = [];
+
+    foreach ($filas as $index => $fila) {
+        $sumaOtros = 0;
+
+        foreach ($filas as $i => $otra) {
+            if ($i === $index) {
+                continue;
+            }
+
+            $sumaOtros += (int) ($otra['cantidad'] ?? 0);
+        }
+
+        $max = max(0, $total - $sumaOtros);
+        $options[$index] = $max > 0 ? range(1, $max) : [];
+    }
+
+    return $options;
+});
+
+// Opciones dinámicas de cantidad para cada fila de defectos en puntos_1
+$defectoCantidadOptionsPuntos1 = computed(function () {
+    $total = (int) ($this->puntos_1 ?? 0);
+    $filas = $this->defectos_puntos_1 ?? [];
+    $options = [];
+
+    foreach ($filas as $index => $fila) {
+        $sumaOtros = 0;
+
+        foreach ($filas as $i => $otra) {
+            if ($i === $index) {
+                continue;
+            }
+
+            $sumaOtros += (int) ($otra['cantidad'] ?? 0);
+        }
+
+        $max = max(0, $total - $sumaOtros);
+        $options[$index] = $max > 0 ? range(1, $max) : [];
+    }
+
+    return $options;
+});
+
+// Opciones dinámicas de cantidad para cada fila de defectos en puntos_2
+$defectoCantidadOptionsPuntos2 = computed(function () {
+    $total = (int) ($this->puntos_2 ?? 0);
+    $filas = $this->defectos_puntos_2 ?? [];
+    $options = [];
+
+    foreach ($filas as $index => $fila) {
+        $sumaOtros = 0;
+
+        foreach ($filas as $i => $otra) {
+            if ($i === $index) {
+                continue;
+            }
+
+            $sumaOtros += (int) ($otra['cantidad'] ?? 0);
+        }
+
+        $max = max(0, $total - $sumaOtros);
+        $options[$index] = $max > 0 ? range(1, $max) : [];
+    }
+
+    return $options;
+});
+
+// Opciones dinámicas de cantidad para cada fila de defectos en puntos_4
+$defectoCantidadOptionsPuntos4 = computed(function () {
+    $total = (int) ($this->puntos_4 ?? 0);
+    $filas = $this->defectos_puntos_4 ?? [];
     $options = [];
 
     foreach ($filas as $index => $fila) {
@@ -487,6 +688,59 @@ $removeDefectoPuntos3 = function (int $index) {
     $this->defectos_puntos_3 = array_values($filas);
 };
 
+// Acciones para gestionar filas de defectos en puntos_1
+$addDefectoPuntos1 = function () {
+    $filas = $this->defectos_puntos_1 ?? [];
+    $filas[] = ['defecto_id' => null, 'cantidad' => null];
+    $this->defectos_puntos_1 = $filas;
+};
+
+$removeDefectoPuntos1 = function (int $index) {
+    $filas = $this->defectos_puntos_1 ?? [];
+
+    if (! isset($filas[$index])) {
+        return;
+    }
+
+    array_splice($filas, $index, 1);
+    $this->defectos_puntos_1 = array_values($filas);
+};
+
+// Acciones para gestionar filas de defectos en puntos_2
+$addDefectoPuntos2 = function () {
+    $filas = $this->defectos_puntos_2 ?? [];
+    $filas[] = ['defecto_id' => null, 'cantidad' => null];
+    $this->defectos_puntos_2 = $filas;
+};
+
+$removeDefectoPuntos2 = function (int $index) {
+    $filas = $this->defectos_puntos_2 ?? [];
+
+    if (! isset($filas[$index])) {
+        return;
+    }
+
+    array_splice($filas, $index, 1);
+    $this->defectos_puntos_2 = array_values($filas);
+};
+
+// Acciones para gestionar filas de defectos en puntos_4
+$addDefectoPuntos4 = function () {
+    $filas = $this->defectos_puntos_4 ?? [];
+    $filas[] = ['defecto_id' => null, 'cantidad' => null];
+    $this->defectos_puntos_4 = $filas;
+};
+
+$removeDefectoPuntos4 = function (int $index) {
+    $filas = $this->defectos_puntos_4 ?? [];
+
+    if (! isset($filas[$index])) {
+        return;
+    }
+
+    array_splice($filas, $index, 1);
+    $this->defectos_puntos_4 = array_values($filas);
+};
 
 // 6. Lógica para guardar el registro
 $save = function () {
@@ -861,17 +1115,22 @@ $save = function () {
                                         @enderror
                                     </div>
 
-                                    {{-- Fila 3: Puntos + Desglose de defectos (piloto con Flux en 3 Puntos) --}}
+                                    {{-- Fila 3: Puntos + Desglose de defectos --}}
                                     <div class="sm:col-span-6">
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos por Puntos</label>
                                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                            Seleccione el total por tipo; en 3 Puntos podrá desglosar exactamente la misma cantidad en defectos.
+                                            Seleccione el total por tipo; podrá desglosar exactamente la misma cantidad en defectos.
                                         </p>
                                         <div class="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                                             @foreach (['puntos_1' => '1 Punto', 'puntos_2' => '2 Puntos', 'puntos_3' => '3 Puntos', 'puntos_4' => '4 Puntos'] as $seccion => $etiqueta)
-                                            @if ($seccion !== 'puntos_3')
-                                            {{-- Puntos 1, 2 y 4: solo total, sin desglose aún --}}
+                                            @php
+                                            $totalVar = ${$seccion} ?? 0;
+                                            $defectosVar = 'defectos_' . $seccion;
+                                            $sumaVar = collect(${$defectosVar} ?? [])->sum(fn ($f) => (int) ($f['cantidad'] ?? 0));
+                                            @endphp
+
                                             <div class="flex flex-col gap-2">
+                                                {{-- Select del total --}}
                                                 <div>
                                                     <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
                                                     <select
@@ -884,54 +1143,32 @@ $save = function () {
                                                     </select>
                                                     @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                 </div>
-                                            </div>
-                                            @else
-                                            {{-- Puntos_3: piloto con Flux + lógica de tope --}}
-                                            @php
-                                            $totalP3 = (int) $puntos_3;
-                                            $sumaP3 = collect($defectos_puntos_3 ?? [])->sum(fn ($f) => (int) ($f['cantidad'] ?? 0));
-                                            @endphp
 
-                                            <div class="flex flex-col gap-2">
-                                                {{-- Select del total --}}
-                                                <div>
-                                                    <label for="puntos_3" class="text-xs text-gray-500 dark:text-gray-400">3 Puntos</label>
-                                                    <select
-                                                        wire:model.live="puntos_3"
-                                                        id="puntos_3"
-                                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                        @for ($i = 0; $i <= 20; $i++)
-                                                            <option value="{{ $i }}">{{ $i }}</option>
-                                                            @endfor
-                                                    </select>
-                                                    @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                </div>
-
-                                                @if($totalP3 > 0)
+                                                @if($totalVar > 0)
                                                 <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden">
                                                     <div class="flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                                                        <span>Desglose (Asignados: {{ $sumaP3 }} / Total: {{ $totalP3 }})</span>
+                                                        <span>Desglose (Asignados: {{ $sumaVar }} / Total: {{ $totalVar }})</span>
                                                     </div>
 
                                                     <div class="border-t border-gray-200 dark:border-gray-600 p-3 space-y-2">
                                                         @php
                                                         // Obtener los IDs de defectos ya seleccionados en cualquier fila
-                                                        $selectedDefectIds = collect($defectos_puntos_3 ?? [])
+                                                        $selectedDefectIds = collect(${$defectosVar} ?? [])
                                                         ->pluck('defecto_id')
                                                         ->filter()
                                                         ->map(fn($id) => (int)$id);
                                                         @endphp
-                                                        @foreach (($defectos_puntos_3 ?? []) as $index => $fila)
+                                                        @foreach ((${$defectosVar} ?? []) as $index => $fila)
                                                         <div class="flex gap-2 items-end">
                                                             {{-- Defecto --}}
                                                             <flux:select
                                                                 class="basis-3/4 min-w-0"
-                                                                wire:model.live="defectos_puntos_3.{{ $index }}.defecto_id"
+                                                                wire:model.live="{{ $defectosVar }}.{{ $index }}.defecto_id"
                                                                 placeholder="Defecto">
                                                                 @foreach ($catalogoDefectos as $def)
                                                                 @php
                                                                 $isTaken = $selectedDefectIds->contains($def->id);
-                                                                $currentId = (int)($defectos_puntos_3[$index]['defecto_id'] ?? 0);
+                                                                $currentId = (int)(${$defectosVar}[$index]['defecto_id'] ?? 0);
                                                                 $isCurrent = $def->id === $currentId;
                                                                 @endphp
                                                                 @if (!$isTaken || $isCurrent)
@@ -943,11 +1180,14 @@ $save = function () {
                                                             </flux:select>
 
                                                             {{-- Cantidad dinámica --}}
+                                                            @php
+                                                            $optionsVar = 'defectoCantidadOptions' . ucfirst(str_replace('puntos_', 'Puntos', $seccion));
+                                                            @endphp
                                                             <flux:select
                                                                 class="flex-1 min-w-0"
-                                                                wire:model.live="defectos_puntos_3.{{ $index }}.cantidad"
+                                                                wire:model.live="{{ $defectosVar }}.{{ $index }}.cantidad"
                                                                 placeholder="Cant.">
-                                                                @foreach (($this->defectoCantidadOptionsPuntos3[$index] ?? []) as $valor)
+                                                                @foreach (($this->{$optionsVar}[$index] ?? []) as $valor)
                                                                 <flux:select.option
                                                                     value="{{ $valor }}"
                                                                     label="{{ $valor }}" />
@@ -955,27 +1195,32 @@ $save = function () {
                                                             </flux:select>
 
                                                             {{-- Quitar fila --}}
+                                                            @php
+                                                            $removeFunction = 'removeDefecto' . ucfirst(str_replace('puntos_', 'Puntos', $seccion));
+                                                            @endphp
                                                             <flux:button
                                                                 size="xs"
                                                                 icon="x-mark"
                                                                 variant="ghost"
-                                                                wire:click="removeDefectoPuntos3({{ $index }})" />
+                                                                wire:click="{{ $removeFunction }}({{ $index }})" />
                                                         </div>
                                                         @endforeach
 
                                                         {{-- Agregar fila --}}
+                                                        @php
+                                                        $addFunction = 'addDefecto' . ucfirst(str_replace('puntos_', 'Puntos', $seccion));
+                                                        @endphp
                                                         <flux:button
                                                             size="xs"
                                                             variant="outline"
                                                             class="w-full justify-center"
-                                                            wire:click="addDefectoPuntos3">
+                                                            wire:click="{{ $addFunction }}">
                                                             Agregar defecto
                                                         </flux:button>
                                                     </div>
                                                 </div>
                                                 @endif
                                             </div>
-                                            @endif
                                             @endforeach
                                         </div>
                                     </div>
