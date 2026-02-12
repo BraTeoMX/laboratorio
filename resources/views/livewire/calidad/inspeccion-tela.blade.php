@@ -914,6 +914,13 @@ $save = function () {
                                                     </div>
 
                                                     <div class="border-t border-gray-200 dark:border-gray-600 p-3 space-y-2">
+                                                        @php
+                                                        // Obtener los IDs de defectos ya seleccionados en cualquier fila
+                                                        $selectedDefectIds = collect($defectos_puntos_3 ?? [])
+                                                        ->pluck('defecto_id')
+                                                        ->filter()
+                                                        ->map(fn($id) => (int)$id);
+                                                        @endphp
                                                         @foreach (($defectos_puntos_3 ?? []) as $index => $fila)
                                                         <div class="flex gap-2 items-end">
                                                             {{-- Defecto --}}
@@ -922,9 +929,16 @@ $save = function () {
                                                                 wire:model.live="defectos_puntos_3.{{ $index }}.defecto_id"
                                                                 placeholder="Defecto">
                                                                 @foreach ($catalogoDefectos as $def)
+                                                                @php
+                                                                $isTaken = $selectedDefectIds->contains($def->id);
+                                                                $currentId = (int)($defectos_puntos_3[$index]['defecto_id'] ?? 0);
+                                                                $isCurrent = $def->id === $currentId;
+                                                                @endphp
+                                                                @if (!$isTaken || $isCurrent)
                                                                 <flux:select.option
                                                                     value="{{ $def->id }}"
                                                                     label="{{ $def->nombre }}" />
+                                                                @endif
                                                                 @endforeach
                                                             </flux:select>
 
