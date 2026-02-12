@@ -67,3 +67,57 @@ document.addEventListener('livewire:init', () => {
     });
 
 }); // <-- Cierre del 'livewire:init'
+
+// Componente Alpine para desglose de defectos (inspección de tela)
+document.addEventListener('alpine:init', () => {
+    Alpine.data('desgloseDefectos', (totalRef, defectosRef, _numPuntos) => {
+        const getTotalNum = () => {
+            const t = totalRef;
+            if (t != null && typeof t === 'object' && 'value' in t) return Number(t.value) || 0;
+            return typeof t === 'number' ? t : (Number(t) || 0);
+        };
+        return {
+            get total() {
+                return getTotalNum();
+            },
+            defectos: defectosRef,
+            open: true,
+            getSum() {
+                const arr = Array.isArray(this.defectos) ? this.defectos : [];
+                return arr.reduce((s, f) => s + (parseInt(f.cantidad, 10) || 0), 0);
+            },
+            addRow() {
+                if (!Array.isArray(this.defectos)) this.defectos = [];
+                this.defectos.push({ defecto_id: '', cantidad: 0 });
+            },
+            removeRow(i) {
+                if (Array.isArray(this.defectos)) this.defectos.splice(i, 1);
+            },
+            capCantidad(index) {
+                if (!Array.isArray(this.defectos) || !this.defectos[index]) return;
+                const total = getTotalNum();
+                const rest = this.getSum() - (parseInt(this.defectos[index].cantidad, 10) || 0);
+                const maxAllowed = Math.max(0, total - rest);
+                const current = parseInt(this.defectos[index].cantidad, 10) || 0;
+                this.defectos[index].cantidad = Math.min(current, maxAllowed);
+            },
+            init() {
+                this.$watch(() => getTotalNum(), (total) => {
+                    if (!Array.isArray(this.defectos)) return;
+                    let sum = this.getSum();
+                    while (sum > total && this.defectos.length > 0) {
+                        const last = this.defectos[this.defectos.length - 1];
+                        const c = parseInt(last.cantidad, 10) || 0;
+                        if (c >= sum - total) {
+                            last.cantidad = Math.max(0, c - (sum - total));
+                            sum = this.getSum();
+                            break;
+                        }
+                        sum -= c;
+                        this.defectos.pop();
+                    }
+                });
+            },
+        };
+    });
+});

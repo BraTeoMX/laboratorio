@@ -323,7 +323,12 @@ state([
     'puntos_2' => 0,
     'puntos_3' => 0,
     'puntos_4' => 0,
-    'observaciones' => ''
+    'observaciones' => '',
+    // Desglose de defectos por sección (para inspeccion_detalle_defectos)
+    'defectos_puntos_1' => [],
+    'defectos_puntos_2' => [],
+    'defectos_puntos_3' => [],
+    'defectos_puntos_4' => [],
 ]);
 
 // 3. Datos de ejemplo para los selects
@@ -331,12 +336,13 @@ state([
 //state('articulos', fn() => ['Denim 12oz', 'Gabardina Stretch', 'Popelina Lisa', 'Otro']);
 //state('materiales', fn() => ['100% Algodón', '98% Algodón / 2% Spandex', '100% Poliéster', 'Otro']);
 
-// 4. Cargar los registros existentes para la tabla
+// 4. Cargar los registros existentes para la tabla y catálogo de defectos
 with(fn() => [
     'registros' => InspeccionReporte::with('auditor', 'detalles')
-        ->whereDate('created_at', today()) // <-- 1. Filtra por el día actual
-        ->oldest()                         // <-- 2. Ordena del más antiguo al más nuevo
-        ->get()                            // <-- 3. Obtiene todos los registros sin paginar
+        ->whereDate('created_at', today())
+        ->oldest()
+        ->get(),
+    'catalogoDefectos' => CatalogoDefecto::orderBy('nombre')->get(),
 ]);
 
 // 5. Reglas de validación basadas en tu esquema SQL
@@ -368,7 +374,6 @@ rules([
 // Función para limpiar el formulario
 $resetForm = function () {
     $this->reset(
-        //'proveedor', 'articulo', 'color_nombre', 'ancho_contratado', 'material', 'orden_compra', 'numero_recepcion',
         'numero_piezas',
         'numero_lote',
         'yarda_ticket',
@@ -378,13 +383,20 @@ $resetForm = function () {
         'puntos_2',
         'puntos_3',
         'puntos_4',
-        'observaciones'
+        'observaciones',
+        'defectos_puntos_1',
+        'defectos_puntos_2',
+        'defectos_puntos_3',
+        'defectos_puntos_4'
     );
-    // Reiniciar los contadores de puntos a 0
     $this->puntos_1 = 0;
     $this->puntos_2 = 0;
     $this->puntos_3 = 0;
     $this->puntos_4 = 0;
+    $this->defectos_puntos_1 = [];
+    $this->defectos_puntos_2 = [];
+    $this->defectos_puntos_3 = [];
+    $this->defectos_puntos_4 = [];
 };
 
 
@@ -410,7 +422,7 @@ $save = function () {
             ]);
 
             // --- PASO 2: Crear el detalle y asociarlo al reporte recién creado ---
-            $reporte->detalles()->create([
+            $detalle = $reporte->detalles()->create([
                 'numero_piezas' => $validatedData['numero_piezas'],
                 'numero_lote' => $validatedData['numero_lote'],
                 'yarda_ticket' => $validatedData['yarda_ticket'],
@@ -422,6 +434,40 @@ $save = function () {
                 'puntos_4' => $validatedData['puntos_4'],
                 'observaciones' => $validatedData['observaciones'],
             ]);
+
+            // --- PASO 3: Guardar desglose de defectos en inspeccion_detalle_defectos ---
+            $mapDefectos = [
+                'puntos_1' => 'defectos_puntos_1',
+                'puntos_2' => 'defectos_puntos_2',
+                'puntos_3' => 'defectos_puntos_3',
+                'puntos_4' => 'defectos_puntos_4',
+            ];
+            foreach ($mapDefectos as $seccion => $prop) {
+                $defectos = $this->{$prop};
+                if (! is_array($defectos)) {
+                    continue;
+                }
+                $totalSeccion = (int) ($validatedData[$seccion] ?? 0);
+                $suma = 0;
+                foreach ($defectos as $fila) {
+                    $defectoId = (int) ($fila['defecto_id'] ?? 0);
+                    $cantidad = (int) ($fila['cantidad'] ?? 0);
+                    if ($defectoId <= 0 || $cantidad <= 0) {
+                        continue;
+                    }
+                    if ($suma + $cantidad > $totalSeccion) {
+                        $cantidad = max(0, $totalSeccion - $suma);
+                    }
+                    if ($cantidad > 0) {
+                        $detalle->detalleDefectos()->create([
+                            'defecto_id' => $defectoId,
+                            'seccion' => $seccion,
+                            'cantidad' => $cantidad,
+                        ]);
+                        $suma += $cantidad;
+                    }
+                }
+            }
         });
 
         // Notificación de éxito (requiere que tengas configurado SweetAlert como en tu ejemplo de usuarios)
@@ -705,53 +751,105 @@ $save = function () {
                                         @enderror
                                     </div>
 
-                                    {{-- Fila 3: Puntos (Ocupa toda la fila, sin cambios) --}}
+                                    {{-- Fila 3: Puntos + Desglose de defectos por sección (Alpine + Livewire entangle) --}}
                                     <div class="sm:col-span-6">
-                                        <label
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos
-                                            por Puntos</label>
-                                        <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {{-- Defectos por Puntos: selects 0–20, preselección 0; se resetean a 0 al guardar --}}
-                                            <div>
-                                                <label for="puntos_1" class="text-xs text-gray-500">1 Punto</label>
-                                                <select wire:model.live="puntos_1" id="puntos_1"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                    @for ($i = 0; $i <= 20; $i++)
-                                                        <option value="{{ $i }}">{{ $i }}</option>
-                                                        @endfor
-                                                </select>
-                                                @error('puntos_1') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                            </div>
-                                            <div>
-                                                <label for="puntos_2" class="text-xs text-gray-500">2 Puntos</label>
-                                                <select wire:model.live="puntos_2" id="puntos_2"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                    @for ($i = 0; $i <= 20; $i++)
-                                                        <option value="{{ $i }}">{{ $i }}</option>
-                                                        @endfor
-                                                </select>
-                                                @error('puntos_2') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                            </div>
-                                            <div>
-                                                <label for="puntos_3" class="text-xs text-gray-500">3 Puntos</label>
-                                                <select wire:model.live="puntos_3" id="puntos_3"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                    @for ($i = 0; $i <= 20; $i++)
-                                                        <option value="{{ $i }}">{{ $i }}</option>
-                                                        @endfor
-                                                </select>
-                                                @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                            </div>
-                                            <div>
-                                                <label for="puntos_4" class="text-xs text-gray-500">4 Puntos</label>
-                                                <select wire:model.live="puntos_4" id="puntos_4"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                    @for ($i = 0; $i <= 20; $i++)
-                                                        <option value="{{ $i }}">{{ $i }}</option>
-                                                        @endfor
-                                                </select>
-                                                @error('puntos_4') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                            </div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos por Puntos</label>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Seleccione el total por tipo; debajo podrá desglosar por defecto (la suma no puede exceder el total).</p>
+                                        <div class="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            @foreach (['puntos_1' => '1 Punto', 'puntos_2' => '2 Puntos', 'puntos_3' => '3 Puntos', 'puntos_4' => '4 Puntos'] as $seccion => $etiqueta)
+                                                @php
+                                                    $propDefectos = 'defectos_' . $seccion;
+                                                    $totalPuntosSeccion = match ($seccion) {
+                                                        'puntos_1' => (int) $puntos_1,
+                                                        'puntos_2' => (int) $puntos_2,
+                                                        'puntos_3' => (int) $puntos_3,
+                                                        'puntos_4' => (int) $puntos_4,
+                                                        default => 0,
+                                                    };
+                                                @endphp
+                                                <div class="flex flex-col gap-2">
+                                                    <div>
+                                                        <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
+                                                        <select
+                                                            wire:model.live="{{ $seccion }}"
+                                                            id="{{ $seccion }}"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                        >
+                                                            @for ($i = 0; $i <= 20; $i++)
+                                                                <option value="{{ $i }}">{{ $i }}</option>
+                                                            @endfor
+                                                        </select>
+                                                        @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                    {{-- Panel desglose: visible cuando total > 0 (Livewire re-render) --}}
+                                                    @if($totalPuntosSeccion > 0)
+                                                        <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden"
+                                                            x-data="desgloseDefectos($wire.entangle('{{ $seccion }}'), $wire.entangle('{{ $propDefectos }}'), {{ $seccion === 'puntos_1' ? 1 : ($seccion === 'puntos_2' ? 2 : ($seccion === 'puntos_3' ? 3 : 4)) }})"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                @click="open = !open"
+                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                            >
+                                                                <span x-text="'Desglose (Asignados: ' + getSum() + ' / Total: ' + total + ')'"></span>
+                                                                <span
+                                                                    class="shrink-0 transition-transform"
+                                                                    :class="open ? 'rotate-180' : ''"
+                                                                >
+                                                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                                                </span>
+                                                            </button>
+                                                            <div x-show="open" x-transition class="border-t border-gray-200 dark:border-gray-600">
+                                                                <div class="p-3 space-y-2">
+                                                                    <p
+                                                                        class="text-xs"
+                                                                        :class="getSum() > total ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'"
+                                                                        x-text="getSum() > total ? 'La suma de cantidades no puede exceder ' + total + '.' : ''"
+                                                                    ></p>
+                                                                    <template x-for="(fila, index) in defectos" :key="index">
+                                                                        <div class="flex gap-2 items-start">
+                                                                            <select
+                                                                                x-model="fila.defecto_id"
+                                                                                class="flex-1 min-w-0 rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                                                            >
+                                                                                <option value="">— Defecto —</option>
+                                                                                @foreach ($catalogoDefectos as $def)
+                                                                                    <option value="{{ $def->id }}">{{ $def->nombre }}</option>
+                                                                                @endforeach
+                                                                            </select>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                :max="total"
+                                                                                x-model.number="fila.cantidad"
+                                                                                @input="capCantidad(index)"
+                                                                                class="w-20 rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                                                                placeholder="0"
+                                                                            >
+                                                                            <button
+                                                                                type="button"
+                                                                                @click="removeRow(index)"
+                                                                                class="shrink-0 p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                                title="Quitar fila"
+                                                                            >
+                                                                                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    </template>
+                                                                    <button
+                                                                        type="button"
+                                                                        @click="addRow()"
+                                                                        class="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                                    >
+                                                                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                                                        Agregar defecto
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
 
