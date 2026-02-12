@@ -355,7 +355,7 @@ $ajustarDefectosPuntos3 = function () {
 };
 
 updated([
-    'puntos_3' => fn () => $this->ajustarDefectosPuntos3(),
+    'puntos_3' => fn() => $this->ajustarDefectosPuntos3(),
 ]);
 
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
@@ -869,107 +869,99 @@ $save = function () {
                                         </p>
                                         <div class="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                                             @foreach (['puntos_1' => '1 Punto', 'puntos_2' => '2 Puntos', 'puntos_3' => '3 Puntos', 'puntos_4' => '4 Puntos'] as $seccion => $etiqueta)
-                                                @if ($seccion !== 'puntos_3')
-                                                    {{-- Puntos 1, 2 y 4: solo total, sin desglose aún --}}
-                                                    <div class="flex flex-col gap-2">
-                                                        <div>
-                                                            <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
-                                                            <select
-                                                                wire:model.live="{{ $seccion }}"
-                                                                id="{{ $seccion }}"
-                                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                            >
-                                                                @for ($i = 0; $i <= 20; $i++)
-                                                                    <option value="{{ $i }}">{{ $i }}</option>
-                                                                @endfor
-                                                            </select>
-                                                            @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                        </div>
+                                            @if ($seccion !== 'puntos_3')
+                                            {{-- Puntos 1, 2 y 4: solo total, sin desglose aún --}}
+                                            <div class="flex flex-col gap-2">
+                                                <div>
+                                                    <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
+                                                    <select
+                                                        wire:model.live="{{ $seccion }}"
+                                                        id="{{ $seccion }}"
+                                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                        @for ($i = 0; $i <= 20; $i++)
+                                                            <option value="{{ $i }}">{{ $i }}</option>
+                                                            @endfor
+                                                    </select>
+                                                    @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                </div>
+                                            </div>
+                                            @else
+                                            {{-- Puntos_3: piloto con Flux + lógica de tope --}}
+                                            @php
+                                            $totalP3 = (int) $puntos_3;
+                                            $sumaP3 = collect($defectos_puntos_3 ?? [])->sum(fn ($f) => (int) ($f['cantidad'] ?? 0));
+                                            @endphp
+
+                                            <div class="flex flex-col gap-2">
+                                                {{-- Select del total --}}
+                                                <div>
+                                                    <label for="puntos_3" class="text-xs text-gray-500 dark:text-gray-400">3 Puntos</label>
+                                                    <select
+                                                        wire:model.live="puntos_3"
+                                                        id="puntos_3"
+                                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                        @for ($i = 0; $i <= 20; $i++)
+                                                            <option value="{{ $i }}">{{ $i }}</option>
+                                                            @endfor
+                                                    </select>
+                                                    @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                </div>
+
+                                                @if($totalP3 > 0)
+                                                <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden">
+                                                    <div class="flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                                                        <span>Desglose (Asignados: {{ $sumaP3 }} / Total: {{ $totalP3 }})</span>
                                                     </div>
-                                                @else
-                                                    {{-- Puntos_3: piloto con Flux + lógica de tope --}}
-                                                    @php
-                                                        $totalP3 = (int) $puntos_3;
-                                                        $sumaP3  = collect($defectos_puntos_3 ?? [])->sum(fn ($f) => (int) ($f['cantidad'] ?? 0));
-                                                    @endphp
 
-                                                    <div class="flex flex-col gap-2">
-                                                        {{-- Select del total --}}
-                                                        <div>
-                                                            <label for="puntos_3" class="text-xs text-gray-500 dark:text-gray-400">3 Puntos</label>
-                                                            <select
-                                                                wire:model.live="puntos_3"
-                                                                id="puntos_3"
-                                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                            >
-                                                                @for ($i = 0; $i <= 20; $i++)
-                                                                    <option value="{{ $i }}">{{ $i }}</option>
-                                                                @endfor
-                                                            </select>
-                                                            @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    <div class="border-t border-gray-200 dark:border-gray-600 p-3 space-y-2">
+                                                        @foreach (($defectos_puntos_3 ?? []) as $index => $fila)
+                                                        <div class="flex gap-2 items-end">
+                                                            {{-- Defecto --}}
+                                                            <flux:select
+                                                                class="basis-3/4 min-w-0"
+                                                                wire:model.live="defectos_puntos_3.{{ $index }}.defecto_id"
+                                                                placeholder="Defecto">
+                                                                @foreach ($catalogoDefectos as $def)
+                                                                <flux:select.option
+                                                                    value="{{ $def->id }}"
+                                                                    label="{{ $def->nombre }}" />
+                                                                @endforeach
+                                                            </flux:select>
+
+                                                            {{-- Cantidad dinámica --}}
+                                                            <flux:select
+                                                                class="flex-1 min-w-0"
+                                                                wire:model.live="defectos_puntos_3.{{ $index }}.cantidad"
+                                                                placeholder="Cant.">
+                                                                @foreach (($this->defectoCantidadOptionsPuntos3[$index] ?? []) as $valor)
+                                                                <flux:select.option
+                                                                    value="{{ $valor }}"
+                                                                    label="{{ $valor }}" />
+                                                                @endforeach
+                                                            </flux:select>
+
+                                                            {{-- Quitar fila --}}
+                                                            <flux:button
+                                                                size="xs"
+                                                                icon="x-mark"
+                                                                variant="ghost"
+                                                                wire:click="removeDefectoPuntos3({{ $index }})" />
                                                         </div>
+                                                        @endforeach
 
-                                                        @if($totalP3 > 0)
-                                                            <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden">
-                                                                <div class="flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                                                                    <span>Desglose (Asignados: {{ $sumaP3 }} / Total: {{ $totalP3 }})</span>
-                                                                </div>
-
-                                                                <div class="border-t border-gray-200 dark:border-gray-600 p-3 space-y-2">
-                                                                    @foreach (($defectos_puntos_3 ?? []) as $index => $fila)
-                                                                        <div class="flex gap-2 items-end">
-                                                                            {{-- Defecto --}}
-                                                                            <flux:select
-                                                                                class="flex-1"
-                                                                                wire:model.live="defectos_puntos_3.{{ $index }}.defecto_id"
-                                                                                placeholder="Defecto"
-                                                                            >
-                                                                                @foreach ($catalogoDefectos as $def)
-                                                                                    <flux:select.option
-                                                                                        value="{{ $def->id }}"
-                                                                                        label="{{ $def->nombre }}"
-                                                                                    />
-                                                                                @endforeach
-                                                                            </flux:select>
-
-                                                                            {{-- Cantidad dinámica --}}
-                                                                            <flux:select
-                                                                                class="w-24"
-                                                                                wire:model.live="defectos_puntos_3.{{ $index }}.cantidad"
-                                                                                placeholder="Cant."
-                                                                            >
-                                                                                @foreach (($this->defectoCantidadOptionsPuntos3[$index] ?? []) as $valor)
-                                                                                    <flux:select.option
-                                                                                        value="{{ $valor }}"
-                                                                                        label="{{ $valor }}"
-                                                                                    />
-                                                                                @endforeach
-                                                                            </flux:select>
-
-                                                                            {{-- Quitar fila --}}
-                                                                            <flux:button
-                                                                                size="xs"
-                                                                                icon="x-mark"
-                                                                                variant="ghost"
-                                                                                wire:click="removeDefectoPuntos3({{ $index }})"
-                                                                            />
-                                                                        </div>
-                                                                    @endforeach
-
-                                                                    {{-- Agregar fila --}}
-                                                                    <flux:button
-                                                                        size="xs"
-                                                                        variant="outline"
-                                                                        class="w-full justify-center"
-                                                                        wire:click="addDefectoPuntos3"
-                                                                    >
-                                                                        Agregar defecto
-                                                                    </flux:button>
-                                                                </div>
-                                                            </div>
-                                                        @endif
+                                                        {{-- Agregar fila --}}
+                                                        <flux:button
+                                                            size="xs"
+                                                            variant="outline"
+                                                            class="w-full justify-center"
+                                                            wire:click="addDefectoPuntos3">
+                                                            Agregar defecto
+                                                        </flux:button>
                                                     </div>
+                                                </div>
                                                 @endif
+                                            </div>
+                                            @endif
                                             @endforeach
                                         </div>
                                     </div>
