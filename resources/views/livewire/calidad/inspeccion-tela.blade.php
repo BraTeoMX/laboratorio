@@ -1,6 +1,6 @@
 <?php
 
-use function Livewire\Volt\{state, rules, with, on, mount, computed}; // MODIFICADO: Se añade 'computed'
+use function Livewire\Volt\{state, rules, with, on, mount, computed, updated};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -312,6 +312,52 @@ $updatedAnchoContratadoInput = function () {
     }
 };
 
+// Ajusta automáticamente el desglose de defectos de puntos_3 cuando cambia el total
+$ajustarDefectosPuntos3 = function () {
+    $defectos = $this->defectos_puntos_3 ?? [];
+    $total = (int) ($this->puntos_3 ?? 0);
+
+    if (! is_array($defectos) || $total <= 0) {
+        $this->defectos_puntos_3 = [];
+        return;
+    }
+
+    $suma = 0;
+    foreach ($defectos as $fila) {
+        $suma += (int) ($fila['cantidad'] ?? 0);
+    }
+
+    if ($suma <= $total) {
+        return;
+    }
+
+    // Recortar desde el final hasta que la suma no exceda el total
+    for ($i = count($defectos) - 1; $i >= 0 && $suma > $total; $i--) {
+        $cantidad = (int) ($defectos[$i]['cantidad'] ?? 0);
+
+        if ($cantidad <= 0) {
+            array_splice($defectos, $i, 1);
+            continue;
+        }
+
+        $exceso = $suma - $total;
+
+        if ($cantidad > $exceso) {
+            $defectos[$i]['cantidad'] = $cantidad - $exceso;
+            $suma = $total;
+        } else {
+            $suma -= $cantidad;
+            array_splice($defectos, $i, 1);
+        }
+    }
+
+    $this->defectos_puntos_3 = array_values($defectos);
+};
+
+updated([
+    'puntos_3' => fn () => $this->ajustarDefectosPuntos3(),
+]);
+
 // 2. Estado para el formulario de InspeccionDetalle (Detalles del rollo)
 state([
     'numero_piezas' => '',
@@ -330,6 +376,30 @@ state([
     'defectos_puntos_3' => [],
     'defectos_puntos_4' => [],
 ]);
+
+// Opciones dinámicas de cantidad para cada fila de defectos en puntos_3
+$defectoCantidadOptionsPuntos3 = computed(function () {
+    $total = (int) ($this->puntos_3 ?? 0);
+    $filas = $this->defectos_puntos_3 ?? [];
+    $options = [];
+
+    foreach ($filas as $index => $fila) {
+        $sumaOtros = 0;
+
+        foreach ($filas as $i => $otra) {
+            if ($i === $index) {
+                continue;
+            }
+
+            $sumaOtros += (int) ($otra['cantidad'] ?? 0);
+        }
+
+        $max = max(0, $total - $sumaOtros);
+        $options[$index] = $max > 0 ? range(1, $max) : [];
+    }
+
+    return $options;
+});
 
 // 3. Datos de ejemplo para los selects
 //state('proveedores', fn() => ['Kaltex', 'Tavex', 'Global Denim', 'Otro']);
@@ -399,10 +469,50 @@ $resetForm = function () {
     $this->defectos_puntos_4 = [];
 };
 
+// Acciones para gestionar filas de defectos en puntos_3
+$addDefectoPuntos3 = function () {
+    $filas = $this->defectos_puntos_3 ?? [];
+    $filas[] = ['defecto_id' => null, 'cantidad' => null];
+    $this->defectos_puntos_3 = $filas;
+};
+
+$removeDefectoPuntos3 = function (int $index) {
+    $filas = $this->defectos_puntos_3 ?? [];
+
+    if (! isset($filas[$index])) {
+        return;
+    }
+
+    array_splice($filas, $index, 1);
+    $this->defectos_puntos_3 = array_values($filas);
+};
+
 
 // 6. Lógica para guardar el registro
 $save = function () {
     $validatedData = $this->validate();
+
+    // Validación: en puntos_3 la suma de defectos debe igualar al total
+    $totalP3 = (int) ($validatedData['puntos_3'] ?? 0);
+
+    if ($totalP3 > 0) {
+        $sumaP3 = 0;
+
+        foreach ($this->defectos_puntos_3 ?? [] as $fila) {
+            $sumaP3 += (int) ($fila['cantidad'] ?? 0);
+        }
+
+        if ($sumaP3 < $totalP3) {
+            $faltantes = $totalP3 - $sumaP3;
+
+            $this->dispatch('swal:toast', [
+                'icon'  => 'warning',
+                'title' => "En '3 Puntos' seleccionaste '{$totalP3}' pero solo clasificaste '{$sumaP3}'. Faltan '{$faltantes}' por clasificar.",
+            ]);
+
+            return;
+        }
+    }
 
     try {
         DB::transaction(function () use ($validatedData) {
@@ -751,104 +861,115 @@ $save = function () {
                                         @enderror
                                     </div>
 
-                                    {{-- Fila 3: Puntos + Desglose de defectos por sección (Alpine + Livewire entangle) --}}
+                                    {{-- Fila 3: Puntos + Desglose de defectos (piloto con Flux en 3 Puntos) --}}
                                     <div class="sm:col-span-6">
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Defectos por Puntos</label>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Seleccione el total por tipo; debajo podrá desglosar por defecto (la suma no puede exceder el total).</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                            Seleccione el total por tipo; en 3 Puntos podrá desglosar exactamente la misma cantidad en defectos.
+                                        </p>
                                         <div class="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                                             @foreach (['puntos_1' => '1 Punto', 'puntos_2' => '2 Puntos', 'puntos_3' => '3 Puntos', 'puntos_4' => '4 Puntos'] as $seccion => $etiqueta)
-                                                @php
-                                                    $propDefectos = 'defectos_' . $seccion;
-                                                    $totalPuntosSeccion = match ($seccion) {
-                                                        'puntos_1' => (int) $puntos_1,
-                                                        'puntos_2' => (int) $puntos_2,
-                                                        'puntos_3' => (int) $puntos_3,
-                                                        'puntos_4' => (int) $puntos_4,
-                                                        default => 0,
-                                                    };
-                                                @endphp
-                                                <div class="flex flex-col gap-2">
-                                                    <div>
-                                                        <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
-                                                        <select
-                                                            wire:model.live="{{ $seccion }}"
-                                                            id="{{ $seccion }}"
-                                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                        >
-                                                            @for ($i = 0; $i <= 20; $i++)
-                                                                <option value="{{ $i }}">{{ $i }}</option>
-                                                            @endfor
-                                                        </select>
-                                                        @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                    </div>
-                                                    {{-- Panel desglose: visible cuando total > 0 (Livewire re-render) --}}
-                                                    @if($totalPuntosSeccion > 0)
-                                                        <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden"
-                                                            x-data="desgloseDefectos($wire.entangle('{{ $seccion }}'), $wire.entangle('{{ $propDefectos }}'), {{ $seccion === 'puntos_1' ? 1 : ($seccion === 'puntos_2' ? 2 : ($seccion === 'puntos_3' ? 3 : 4)) }})"
-                                                        >
-                                                            <button
-                                                                type="button"
-                                                                @click="open = !open"
-                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                @if ($seccion !== 'puntos_3')
+                                                    {{-- Puntos 1, 2 y 4: solo total, sin desglose aún --}}
+                                                    <div class="flex flex-col gap-2">
+                                                        <div>
+                                                            <label for="{{ $seccion }}" class="text-xs text-gray-500 dark:text-gray-400">{{ $etiqueta }}</label>
+                                                            <select
+                                                                wire:model.live="{{ $seccion }}"
+                                                                id="{{ $seccion }}"
+                                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                             >
-                                                                <span x-text="'Desglose (Asignados: ' + getSum() + ' / Total: ' + total + ')'"></span>
-                                                                <span
-                                                                    class="shrink-0 transition-transform"
-                                                                    :class="open ? 'rotate-180' : ''"
-                                                                >
-                                                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                                                </span>
-                                                            </button>
-                                                            <div x-show="open" x-transition class="border-t border-gray-200 dark:border-gray-600">
-                                                                <div class="p-3 space-y-2">
-                                                                    <p
-                                                                        class="text-xs"
-                                                                        :class="getSum() > total ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'"
-                                                                        x-text="getSum() > total ? 'La suma de cantidades no puede exceder ' + total + '.' : ''"
-                                                                    ></p>
-                                                                    <template x-for="(fila, index) in defectos" :key="index">
-                                                                        <div class="flex gap-2 items-start">
-                                                                            <select
-                                                                                x-model="fila.defecto_id"
-                                                                                class="flex-1 min-w-0 rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                                                @for ($i = 0; $i <= 20; $i++)
+                                                                    <option value="{{ $i }}">{{ $i }}</option>
+                                                                @endfor
+                                                            </select>
+                                                            @error($seccion) <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    {{-- Puntos_3: piloto con Flux + lógica de tope --}}
+                                                    @php
+                                                        $totalP3 = (int) $puntos_3;
+                                                        $sumaP3  = collect($defectos_puntos_3 ?? [])->sum(fn ($f) => (int) ($f['cantidad'] ?? 0));
+                                                    @endphp
+
+                                                    <div class="flex flex-col gap-2">
+                                                        {{-- Select del total --}}
+                                                        <div>
+                                                            <label for="puntos_3" class="text-xs text-gray-500 dark:text-gray-400">3 Puntos</label>
+                                                            <select
+                                                                wire:model.live="puntos_3"
+                                                                id="puntos_3"
+                                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                            >
+                                                                @for ($i = 0; $i <= 20; $i++)
+                                                                    <option value="{{ $i }}">{{ $i }}</option>
+                                                                @endfor
+                                                            </select>
+                                                            @error('puntos_3') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        @if($totalP3 > 0)
+                                                            <div class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 overflow-hidden">
+                                                                <div class="flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                                                                    <span>Desglose (Asignados: {{ $sumaP3 }} / Total: {{ $totalP3 }})</span>
+                                                                </div>
+
+                                                                <div class="border-t border-gray-200 dark:border-gray-600 p-3 space-y-2">
+                                                                    @foreach (($defectos_puntos_3 ?? []) as $index => $fila)
+                                                                        <div class="flex gap-2 items-end">
+                                                                            {{-- Defecto --}}
+                                                                            <flux:select
+                                                                                class="flex-1"
+                                                                                wire:model.live="defectos_puntos_3.{{ $index }}.defecto_id"
+                                                                                placeholder="Defecto"
                                                                             >
-                                                                                <option value="">— Defecto —</option>
                                                                                 @foreach ($catalogoDefectos as $def)
-                                                                                    <option value="{{ $def->id }}">{{ $def->nombre }}</option>
+                                                                                    <flux:select.option
+                                                                                        value="{{ $def->id }}"
+                                                                                        label="{{ $def->nombre }}"
+                                                                                    />
                                                                                 @endforeach
-                                                                            </select>
-                                                                            <input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                :max="total"
-                                                                                x-model.number="fila.cantidad"
-                                                                                @input="capCantidad(index)"
-                                                                                class="w-20 rounded-md border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                                                                placeholder="0"
+                                                                            </flux:select>
+
+                                                                            {{-- Cantidad dinámica --}}
+                                                                            <flux:select
+                                                                                class="w-24"
+                                                                                wire:model.live="defectos_puntos_3.{{ $index }}.cantidad"
+                                                                                placeholder="Cant."
                                                                             >
-                                                                            <button
-                                                                                type="button"
-                                                                                @click="removeRow(index)"
-                                                                                class="shrink-0 p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                                title="Quitar fila"
-                                                                            >
-                                                                                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                                            </button>
+                                                                                @foreach (($this->defectoCantidadOptionsPuntos3[$index] ?? []) as $valor)
+                                                                                    <flux:select.option
+                                                                                        value="{{ $valor }}"
+                                                                                        label="{{ $valor }}"
+                                                                                    />
+                                                                                @endforeach
+                                                                            </flux:select>
+
+                                                                            {{-- Quitar fila --}}
+                                                                            <flux:button
+                                                                                size="xs"
+                                                                                icon="x-mark"
+                                                                                variant="ghost"
+                                                                                wire:click="removeDefectoPuntos3({{ $index }})"
+                                                                            />
                                                                         </div>
-                                                                    </template>
-                                                                    <button
-                                                                        type="button"
-                                                                        @click="addRow()"
-                                                                        class="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                                    @endforeach
+
+                                                                    {{-- Agregar fila --}}
+                                                                    <flux:button
+                                                                        size="xs"
+                                                                        variant="outline"
+                                                                        class="w-full justify-center"
+                                                                        wire:click="addDefectoPuntos3"
                                                                     >
-                                                                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                                                         Agregar defecto
-                                                                    </button>
+                                                                    </flux:button>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    @endif
-                                                </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>
