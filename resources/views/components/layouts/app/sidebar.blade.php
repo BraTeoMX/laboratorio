@@ -42,6 +42,10 @@
         @else
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Menu')" class="grid">
+                <x-nav-link :href="route('calidad.dashboard-inspeccion')" icon="presentation-chart-line" :active="request()->routeIs('calidad.dashboard-inspeccion')">
+                    {{ __('Dashboard Inspección') }}
+                </x-nav-link>
+
                 <x-nav-link :href="route('dashboard')" icon="chart-pie" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-nav-link>

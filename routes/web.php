@@ -59,6 +59,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // --- Quality Control Module (Calidad) ---
     Route::prefix('calidad')->name('calidad.')->group(function () {
+        // Dashboard Inspección
+        Volt::route('dashboard-inspeccion', 'calidad.dashboard-inspeccion')->name('dashboard-inspeccion');
+        
         // Operaciones principales
         Volt::route('inspeccion-tela', 'calidad.inspeccion-tela')->name('inspeccion');
         Volt::route('auditoria-materia-prima', 'calidad.auditoria-materia-prima')->name('auditoria');

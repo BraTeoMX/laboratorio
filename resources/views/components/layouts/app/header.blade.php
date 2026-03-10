@@ -15,6 +15,11 @@
         </a>
 
         <flux:navbar class="-mb-px max-lg:hidden">
+            <flux:navbar.item icon="presentation-chart-line" :href="route('calidad.dashboard-inspeccion')" :current="request()->routeIs('calidad.dashboard-inspeccion')"
+                wire:navigate>
+                {{ __('Dashboard Inspección') }}
+            </flux:navbar.item>
+
             <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                 wire:navigate>
                 {{ __('Dashboard') }}
@@ -84,6 +89,11 @@
 
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Platform')">
+                <flux:navlist.item icon="presentation-chart-line" :href="route('calidad.dashboard-inspeccion')"
+                    :current="request()->routeIs('calidad.dashboard-inspeccion')" wire:navigate>
+                    {{ __('Dashboard Inspección') }}
+                </flux:navlist.item>
+
                 <flux:navlist.item icon="layout-grid" :href="route('dashboard')"
                     :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}

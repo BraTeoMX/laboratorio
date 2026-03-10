@@ -3,7 +3,9 @@
 use App\Models\AuditoriaMateriaPrima;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use function Livewire\Volt\{state, computed, updated, mount};
+use function Livewire\Volt\{state, computed, updated, mount, layout};
+
+layout('components.layouts.app');
 
 // Definición de Estado
 state([

@@ -6,9 +6,10 @@ use App\Models\User;
 use App\Models\CatalogoRol;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\On; // Asegúrate de que esta línea esté presente
+use Livewire\Attributes\On;
+use Livewire\Attributes\Layout;
 
-new class extends Component {
+new #[Layout('components.layouts.app')] class extends Component {
     use WithPagination;
 
     public bool $isModalOpen = false;

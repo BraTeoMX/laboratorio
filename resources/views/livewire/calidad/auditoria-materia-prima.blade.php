@@ -1,6 +1,9 @@
 <?php
 
-use function Livewire\Volt\{state, rules, with, on, mount, computed};
+use function Livewire\Volt\{state, rules, with, on, mount, computed, layout};
+
+layout('components.layouts.app');
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
